@@ -7,7 +7,7 @@
   Fits a classical twin model for quantitative traits.
 }
 \usage{
-twinlm(formula, data, type=c("ace"), twinid="id", status="zyg", DZ, twinnum="twin",...)
+twinlm(formula, data, type=c("ace"), twinid="id", status="zyg", DZ, twinnum="twin",weight, keep=NULL,debug=FALSE,estimator="gaussian",...)
 
 }
 \arguments{
@@ -24,8 +24,6 @@ twinlm(formula, data, type=c("ace"), twinid="id", status="zyg", DZ, twinnum="twi
   \item{twinid}{The name of the column in the dataset containing the twin-id variable.}
   \item{status}{The name of the column in the dataset containing the
     zygosity variable.}
-  \item{status}{The level in the factor \code{status} corresponding to
-    the dizygotic twins.}
   \item{DZ}{ Character defining the level in the status variable
     corresponding to the dyzogitic twins. If this argument is missing,
     the reference level (i.e. the first level) will be interpreted as
@@ -33,13 +31,18 @@ twinlm(formula, data, type=c("ace"), twinid="id", status="zyg", DZ, twinnum="twi
   \item{twinnum}{The name of the column in the dataset numbering the
     twins (1,2). If it does not exist in \code{data} it will
     automatically be created.}
+  \item{weight}{Weight matrix if needed by the chosen estimator}
+  \item{keep}{Vector of variables from \code{data} that are not
+specified in \code{formula}, to be added to data.frame}
+  \item{debug}{Debug only...}
+  \item{estimator}{Choice of estimator/model.}
   \item{\dots}{}
 }
 \value{
   Returns an object of class \code{twinlm}.
 }
 \author{Klaus K. Holst}
-\seealso{ \code{\link{lvm}} }
+\seealso{ \code{\link{twinsim}} }
 \examples{
 ## ACE model with confounders (x and z)
 MZ<-lvm()

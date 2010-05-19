@@ -7,7 +7,7 @@ Author: Klaus K. Holst
 Maintainer: Klaus K. Holst <kkho@biostat.ku.dk>
 Description: Implementation of the classical twin variance component models (ACE/ADE/AE)
 Keywords: twin model, structural equation model
-Depends: R (>= 2.5.0), graph, MASS, lava (>= 0.9-5)
+Depends: R (>= 2.9.0), graph, MASS, lava (>= 0.9-5)
 Suggests: Rgraphviz
 License: GPL-3
 LazyLoad: yes
