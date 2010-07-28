@@ -1,0 +1,12 @@
+Package: lava.tobit
+Type: Package
+Title: LVM with censored and binary outcomes
+Version: 0.1-0
+Date: 2010-05-17
+Author: Klaus K. Holst
+Maintainer: Klaus K. Holst <kkho@biostat.ku.dk>
+Description: lava plugin allowing combinations of left and right censored and binary outcomes 
+Keywords: twin model, structural equation model
+Depends: R (>= 2.9.0), graph, lava (>= 0.9-5)
+License: GPL-3
+LazyLoad: yes

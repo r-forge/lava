@@ -1,30 +1,26 @@
 ###{{{ Objective function
 
 tobit_method.lvm <- "nlminb1"
-tobit_objective.lvm <- function(x,p,data,weight,indiv=FALSE,debug=FALSE,
+tobit_objective.lvm <- function(x,p,data,weight,indiv=FALSE,
 ###                                algorithm=Miwa(),...) {
                                 algorithm=GenzBretz(abseps=1e-5),...) {
   require(mvtnorm)
   zz <- manifest(x)
-  Debug("start",debug)
   d <- as.matrix(rbind(data)[,zz,drop=FALSE]);
   colnames(d) <- zz  
-  Debug("dd",debug)
   yy <- endogenous(x)
   yy.w <- intersect(yy,colnames(weight))
   yy.idx <- match(yy.w,zz)
   Status <- matrix(0,ncol=length(zz),nrow=nrow(d))
 
   Status[,yy.idx]<- as.matrix(weight)[,yy.w,drop=FALSE]
-  Debug("dd",debug)
   patterns <- unique(Status,MARGIN=1)
   cens.type <- apply(Status,1,
                      function(x) which(apply(patterns,1,function(y) identical(x,y))))  
   mp <- modelVar(x,p,data=as.data.frame(d))
   Sigma <- mp$C ## Model specific covariance matrix
   xi <- mp$xi ## Model specific mean-vector
-  Debug("loop:",debug)
-##  val <- 0
+  ##  val <- 0
   val <- c()
   for (i in 1:nrow(patterns)) {
     ## Usual marginal likelihood for status==1
@@ -41,7 +37,7 @@ tobit_objective.lvm <- function(x,p,data,weight,indiv=FALSE,debug=FALSE,
     right.cens.y <- zz[right.cens.idx] ##setdiff(zz,noncens.y)
     y <- d[idx,,drop=FALSE]
     val1 <- val0 <- 0;
-##    browser()
+    ## browser()
     if (length(noncens.y)>0) {
       ## p(y), using: int[p(y,y*)]dy* =  p(y) int[p(y*|y)]dy*
       val1 <- dmvnorm(d[idx,noncens.y,drop=FALSE], 
@@ -53,7 +49,7 @@ tobit_objective.lvm <- function(x,p,data,weight,indiv=FALSE,debug=FALSE,
     if (length(cens.idx)>0) {
       L <- diag(length(cens.idx))
       L[cbind(cens.which.left,cens.which.left)] <- (-1)
-#      L[cens.which.left,cens.which.left] <- (-1)
+      ##  L[cens.which.left,cens.which.left] <- (-1)
       if (length(noncens.y)==0) {
         val0 <- sapply(idx,
                             function(ii)
@@ -63,13 +59,11 @@ tobit_objective.lvm <- function(x,p,data,weight,indiv=FALSE,debug=FALSE,
       } else {
          M <- mom.cens(x,p,data=y,cens.idx,conditional=TRUE,deriv=FALSE)
          val0 <- c()
-         for (j in 1:length(idx)) {
-           
+         for (j in 1:length(idx)) {           
            val0 <- c(val0,log(pmvnorm(lower=as.numeric(L%*%y[j,cens.idx]),mean=as.numeric(L%*%M$mu.censIobs[j,]),sigma=L%*%M$S.censIobs%*%L,algorithm=algorithm)) )
          }        
         }
-    }
-    
+    }    
     val <- c(val,-val1-val0)
   }
   if (!indiv)
@@ -121,6 +115,7 @@ tobit_gradient.lvm <- function(x,p,data,weight,indiv=FALSE,
     y.pat <- unique(y,MARGIN=1)
     y.type <- apply(y,1,
                     function(x) which(apply(y.pat,1,function(z) identical(x,z))))
+##    browser()
     dummy <- cens.score(x,p,data=y.pat,cens.idx=cens.idx, cens.which.left=cens.which.left, algorithm=algorithm)
     score <- rbind(score,dummy[y.type,,drop=FALSE])
 ##    dummy <- cens.score(x,p,data=y,cens.idx=cens.idx, cens.which.left=cens.which.left)
@@ -157,6 +152,7 @@ tobit_logLik.lvm <- function(object,p,data,weight, ...) {
 cens.score <- function(x,p,data,cens.idx,cens.which.left,...) {
   obs.idx <- setdiff(1:NCOL(data),cens.idx)
   n <- NROW(data)
+##  browser()
   M <- mom.cens(x,p,data=data,cens.idx=cens.idx,conditional=TRUE,deriv=TRUE)
   L <- -diag(length(cens.idx))
   L[cbind(cens.which.left,cens.which.left)] <- 1
@@ -331,10 +327,10 @@ Dthetapmvnorm <- function(yy,mu,S,dmu,dS,seed=1,
 
 mom.cens <- function(x,p,cens.idx,data,deriv=TRUE,conditional=TRUE,right=TRUE,...) {
   obs.idx <- setdiff(1:NCOL(data),cens.idx)
-#  browser()
+##  browser()
   M <- moments(x,p,data=as.data.frame(data))
   if (deriv)
-    D <- deriv(x,p=p,mom=M,meanpar=TRUE) ##,mu=colMeans(data))
+    D <- deriv.lvm(x,p=p,mom=M,meanpar=TRUE) ##,mu=colMeans(data))
 
   if (length(cens.idx)<1) {
     res <- list(S.obs=M$C, mu.obs=M$xi, S.cens=NULL, mu.cens=NULL,
