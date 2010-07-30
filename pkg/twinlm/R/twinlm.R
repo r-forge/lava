@@ -1,6 +1,6 @@
 ###{{{ twinlm
 
-twinlm <- function(formula, data, type=c("ace"), twinid="id", status="zyg", DZ, twinnum="twin",weight, keep=NULL,debug=FALSE,estimator="gaussian",...) {
+twinlm <- function(formula, data, type=c("ace"), twinid="id", status="zyg", DZ, twinnum="twin",weight, binary=FALSE,keep=NULL,debug=FALSE,estimator="gaussian",...) {
 
   if (!missing(weight)) {
     if (is.character(weight)) {
@@ -204,13 +204,20 @@ twinlm <- function(formula, data, type=c("ace"), twinid="id", status="zyg", DZ, 
     myweights <- list(as.matrix(weight1),as.matrix(weight2))
   }
 
+  if (binary) {
+    binary(model1) <- outcomes
+    regfix(model1,from=c("e1","e2"), to=outcomes) <- list(1,1) 
+    binary(model2) <- outcomes
+    regfix(model2,from=c("e1","e2"), to=outcomes) <- list(1,1) 
+  }
+  
 ###Estimate
   newkeep <- as.vector(sapply(keep, function(x) paste(x,1:2,sep=".")))
 ##  return(list(model=list(model1,model2), data=list(wide1,wide2)))
   mg <- multigroup(list(model1,model2), list(wide1,wide2),missing=TRUE,fix=FALSE,keep=newkeep)
   if (is.null(estimator)) return(mg)
   e <- estimate(mg,weight=myweights,debug=debug,estimator=estimator,...)
-  res <- list(coefficients=e$opt$estimate, vcov=e$vcov, estimate=e, model=mg, full=full, call=cl, data=data, status=status, twinid=twinid, twinnum)
+  res <- list(coefficients=e$opt$estimate, vcov=e$vcov, estimate=e, model=mg, full=full, call=cl, data=data, status=status, twinid=twinid, twinnum=twinnum, binary=binary)
   class(res) <- "twinlm"
   return(res)
 }
@@ -239,11 +246,16 @@ summary.twinlm <- function(object,...) {
   lambda.w <- which(sapply(lambda.idx, function(x) length(x)>0))
   rownames(myest)[unlist(lambda.idx)] <- paste("sigma",c("A","C","D","E"),sep="")[lambda.w]
 
+
   varEst <- rep(0,4)
   varEst[lambda.w] <- myest[unlist(lambda.idx),1]
   varSigma <- matrix(0,4,4);
   varSigma[lambda.w,lambda.w] <- e$vcov[unlist(lambda.idx),unlist(lambda.idx)]
   zygtab <- with(object, table(data[,status]))
+
+  if ("e1"%in%latent(e) & object$binary) {
+    varEst[4] <- 1
+  }
 
   h <- function(x) (x[1]^2)/(sum(x^2))
   dh <- function(x) {
@@ -344,7 +356,7 @@ model.frame.twinlm <- function(formula,...) {
 
 ###{{{ twinsim
 
-twinsim <- function(n=100,k1=1,k2=1,mu=10,lambda=c(1,1,1),randomslope=NULL,type="ace",...) {
+twinsim <- function(n=100,k1=1,k2=1,mu=0,lambda=c(1,1,1),randomslope=NULL,type="ace",binary=FALSE,...) {
   mysep <- ""
   outcomes <- paste("y",mysep,1:2,sep="")
   covars <- covars2 <- NULL
@@ -459,6 +471,11 @@ twinsim <- function(n=100,k1=1,k2=1,mu=10,lambda=c(1,1,1),randomslope=NULL,type=
   regfix(sim.model2,to=outcomes[1],from="e1") <- lambda[3]
   regfix(sim.model2,to=outcomes[2],from="e2") <- lambda[3]
 
+
+  if (binary) {
+    binary(sim.model1) <- outcomes
+    binary(sim.model2) <- outcomes
+  }
   
   d1 <- sim(sim.model1,n=n,...)
   d2 <- sim(sim.model2,n=n,...)
