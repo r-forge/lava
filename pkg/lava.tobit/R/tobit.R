@@ -3,7 +3,13 @@
 tobit_method.lvm <- "nlminb1"
 tobit_objective.lvm <- function(x,p,data,weight,indiv=FALSE,
 ###                                algorithm=Miwa(),...) {
-                                algorithm=GenzBretz(abseps=1e-5),...) {
+                                algorithm=GenzBretz(abseps=1e-5),seed=NULL,...) {
+
+  if (!is.null(seed)) {
+    if (!exists(".Random.seed")) runif(1)
+    save.seed <- .Random.seed
+    set.seed(seed)
+  }
   require(mvtnorm)
   zz <- manifest(x)
   d <- as.matrix(rbind(data)[,zz,drop=FALSE]);
@@ -66,6 +72,8 @@ tobit_objective.lvm <- function(x,p,data,weight,indiv=FALSE,
     }    
     val <- c(val,-val1-val0)
   }
+  if (!is.null(seed))
+    set.seed(save.seed)
   if (!indiv)
     return(sum(val))
   val
@@ -111,15 +119,21 @@ tobit_gradient.lvm <- function(x,p,data,weight,indiv=FALSE,
     noncens.y <- zz[noncens.idx]
     left.cens.y <- zz[left.cens.idx]
     right.cens.y <- zz[right.cens.idx] ##setdiff(zz,noncens.y)
-    y <- d[idx,,drop=FALSE]
-    y.pat <- unique(y,MARGIN=1)
-    y.type <- apply(y,1,
-                    function(x) which(apply(y.pat,1,function(z) identical(x,z))))
 ##    browser()
-    dummy <- cens.score(x,p,data=y.pat,cens.idx=cens.idx, cens.which.left=cens.which.left, algorithm=algorithm)
-    score <- rbind(score,dummy[y.type,,drop=FALSE])
-##    dummy <- cens.score(x,p,data=y,cens.idx=cens.idx, cens.which.left=cens.which.left)
-##    score <- rbind(score,dummy)    
+    y <- d[idx,,drop=FALSE]
+##    y.pat <- unique(y,MARGIN=1)
+##    system.time(
+##   y.type <- apply(y,1,
+##                   function(x) which(apply(y.pat,1,function
+##                                           (z) identical(x,z))))
+##                )    
+    ##    browser()
+  ## dummy <- cens.score(x,p,data=y.pat,cens.idx=cens.idx, cens.which.left=cens.which.left, algorithm=algorithm)
+        dummy <- cens.score(x,p,data=y,cens.idx=cens.idx, cens.which.left=cens.which.left, algorithm=algorithm)
+##   score <- rbind(score,dummy[y.type,,drop=FALSE])
+    score <- rbind(score,dummy)    
+    ##    dummy <- cens.score(x,p,data=y,cens.idx=cens.idx, cens.which.left=cens.which.left)
+    ##    score <- rbind(score,dummy)
   }
   if (!is.null(seed))
     set.seed(save.seed)
@@ -154,23 +168,51 @@ cens.score <- function(x,p,data,cens.idx,cens.which.left,...) {
   n <- NROW(data)
 ##  browser()
   M <- mom.cens(x,p,data=data,cens.idx=cens.idx,conditional=TRUE,deriv=TRUE)
-  L <- -diag(length(cens.idx))
-  L[cbind(cens.which.left,cens.which.left)] <- 1
   ## Censored part:
   if (length(cens.idx)>0) {
+
+    combcens <- -1*(length(cens.which.left)>0) +
+      length(cens.which.left)==length(cens.idx)
+    ## 0: left and right, -1: left only, 1: right only
+ 
 ##     mu <- M$mu.cens
 ##     S <- M$S.cens
 ##     dmu <- M$dmu.cens
 ##     dS <- M$dS.cens
-    z <- (matrix(data[,cens.idx],nrow=n))%*%L
+    z <- (matrix(data[,cens.idx],nrow=n))
     ##    z <- data[,cens.idx,drop=FALSE]
     DCDFs <- c()
+
+    S <- M$S.censIobs
+    dS <- M$dS.censIobs
+    if (combcens==0) {
+      L <- -diag(length(cens.idx))
+      L[cbind(cens.which.left,cens.which.left)] <- 1
+      z <- z%*%L
+      S <- L%*%S%*%L
+      dS <- (L%x%L)%*%dS
+    }
     for (i in 1:n) {
+      mu <- M$mu.censIobs[i,]
+      dmu <- matrix(M$dmu.censIobs[,,i],nrow=length(cens.idx))
+      if (combcens==0) {
+        mu <- L%*%mu
+        dmu <- L%*%dmu
+      }
+      if (combcens==-1) {
+        z <- -z
+        mu <- -mu
+        dmu <- -dmu
+      }
       DCDF <- Dthetapmvnorm(z[i,],
-                            mu=L%*%M$mu.censIobs[i,],
-                            S=L%*%M$S.censIobs%*%L,
-                            dS=(L%x%L)%*%M$dS.censIobs,
-                            dmu=L%*%matrix(M$dmu.censIobs[,,i],nrow=length(cens.idx)),
+                    ##        mu=L%*%M$mu.censIobs[i,],
+                            mu=mu,
+##                            S=L%*%M$S.censIobs%*%L,
+                            S=S,
+##                            dS=(L%x%L)%*%M$dS.censIobs,
+                            dS=dS,
+##                            dmu=L%*%matrix(M$dmu.censIobs[,,i],nrow=length(cens.idx)),
+                            dmu=dmu,
                             ...)
       alpha <- attributes(DCDF)$cdf
       DCDFs <- rbind(DCDFs, 1/alpha*DCDF)
