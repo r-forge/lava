@@ -1,8 +1,8 @@
 Package: lava.tobit
 Type: Package
 Title: LVM with censored and binary outcomes
-Version: 0.1-0
-Date: 2010-05-17
+Version: 0.2-0
+Date: 2010-08-06
 Author: Klaus K. Holst
 Maintainer: Klaus K. Holst <kkho@biostat.ku.dk>
 Description: lava plugin allowing combinations of left and right censored and binary outcomes 

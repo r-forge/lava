@@ -1,3 +1,9 @@
+lava.tobit.sim.hook <- function(x,data,...) {
+  if (length(binary(x))>0)
+    data[,binary(x)] <- (data[,binary(x)]>0)*1
+  return(data)
+}
+
 lava.tobit.color.hook <- function(x,subset=vars(x),...) {
   return(list(vars=intersect(subset,binary(x)),col="indianred1"))
 }

@@ -21,6 +21,6 @@ function(x,var=NULL, ...) {
   nodeData(Graph(x), var, attr="binary") <- TRUE
   nodeData(Graph(x), var, attr="normal") <- FALSE
   covfix(x,var,NULL) <- 1
-  distribution(x, var) <- probit.lvm
+  ##  distribution(x, var) <- probit.lvm
   return(x)
 }
