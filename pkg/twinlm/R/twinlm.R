@@ -9,7 +9,7 @@ twinlm <- function(formula, data, type=c("ace"), twinid="id", status="zyg", DZ, 
   } else {
     weight <- NULL
   }
-
+  
   varnames <- all.vars(formula)
   latentnames <- c("a1","a2","c1","c2","d1","d2","e1","e2")
   if (any(latentnames%in%varnames))
@@ -21,6 +21,16 @@ twinlm <- function(formula, data, type=c("ace"), twinid="id", status="zyg", DZ, 
   formula <- update(formula, ~ . + 1)
   yvar <- getoutcome(formula)
 
+  require(survival)
+  if (is.Surv(data[,yvar])) {
+    weight <- 1-data[,yvar][,2]
+    data[,yvar] <- data[,yvar][,1]
+    estimator <- "tobit"
+    data[,"_weight"] <- weight
+    keep <- "_weight"
+  }
+  
+  
   opt <- options(na.action="na.pass")
   ##  mm <- naresid(na.exclude, model.matrix(formula,data))
   mm <- model.matrix(formula,mf)
@@ -64,7 +74,6 @@ twinlm <- function(formula, data, type=c("ace"), twinid="id", status="zyg", DZ, 
   data1.1 <- data1[data1[,twinnum]==1,c(twinid,status,yvar,keep,covars)]; colnames(data1.1) <- c(twinid,status,paste(colnames(data1.1)[-c(1,2)],".1",sep=""))
   data1.2 <- data1[data1[,twinnum]==2,c(twinid,yvar,keep,covars),drop=FALSE]; colnames(data1.2) <- c(twinid, paste(colnames(data1.2)[-1],".2",sep=""))
 
-  
   ##Missing data?
   id1 <- data1.1[,twinid]
   id2 <- data1.2[,twinid]
@@ -152,7 +161,7 @@ twinlm <- function(formula, data, type=c("ace"), twinid="id", status="zyg", DZ, 
       kill(model1) <- ~ c1 + c2
       kill(model2) <- ~ c1 + c2
     }
-  
+
   ## Full rank covariate/design matrix?
   for (i in covars) {
     myvars <- paste(i,c(1,2),sep=".")
@@ -165,7 +174,8 @@ twinlm <- function(formula, data, type=c("ace"), twinid="id", status="zyg", DZ, 
     ##    keep <- myvars[which(!duplicated(wide1[,myvars], MARGIN=2))]    
     trash <- setdiff(myvars,mykeep)
     if (length(mykeep)==1) {
-      regression(model1, to=outcomes[2]) <- paste(mykeep,"@",regfix(model1)$label[trash,outcomes[2]],sep="")
+##      regression(model1, to=outcomes[2]) <- paste(mykeep,"@",regfix(model1)$label[trash,outcomes[2]],sep="")
+      regression(model1, to=outcomes[2], from=mykeep) <- regfix(model1)$label[trash,outcomes[2]]
       kill(model1) <- trash
       ##      wide1 <- subset(wide1, select=-
       ##      warning(paste(" 'dizygotic'")      
@@ -181,36 +191,45 @@ twinlm <- function(formula, data, type=c("ace"), twinid="id", status="zyg", DZ, 
     trash <- setdiff(myvars,mykeep)
     if (length(mykeep)==1) {
       regfix(model2)
-      regression(model2, to=outcomes[2]) <- paste(mykeep,"@",regfix(model2)$label[trash,outcomes[2]],sep="")
+##      regression(model2, to=outcomes[2]) <- paste(mykeep,"@",regfix(model2)$label[trash,outcomes[2]],sep="")
+      regression(model2, to=outcomes[2], from=mykeep) <- regfix(model2)$label[trash,outcomes[2]]
       kill(model2) <- trash
     }
   }
 
+
   myweights <- NULL
   if (!is.null(weight)) {
     Weight <- cbind(data[,twinid],weight); colnames(Weight)[1] <- twinid
-    weight1 <- Weight[1:nrow(data1),]
+    idx1 <- which(data[,twinid]%in%wide1[,twinid])
+    idx2 <- which(data[,twinid]%in%wide2[,twinid])    
+##    weight1 <- Weight[1:nrow(data1),]
+    weight1 <- Weight[idx1,]
     weight1.1 <- weight1[data1[,twinnum]==1,]
     weight1.2 <- weight1[data1[,twinnum]==2,]
-    weight2 <- Weight[1:nrow(data2)+nrow(data1),]
+    ##    weight2 <- Weight[1:nrow(data2)+nrow(data1),]
+    weight2 <- Weight[idx2,]
     weight2.1 <- weight2[data2[,twinnum]==1,]
     weight2.2 <- weight2[data2[,twinnum]==2,]
     weight1 <- merge(x=weight1.1,y=weight1.2,by=twinid)[,-1]
     weight2 <- merge(x=weight2.1,y=weight2.2,by=twinid)[,-1]
-    for (i in 1:length(exogenous(model1)))
-      weight1 <- cbind(weight1,1)
-    for (i in 1:length(exogenous(model2)))
-      weight2 <- cbind(weight2,1)
+##    for (i in 1:length(exogenous(model1)))
+##      weight1 <- cbind(weight1,1)
+##    for (i in 1:length(exogenous(model2)))
+##      weight2 <- cbind(weight2,1)
+    colnames(weight1) <- outcomes
+    colnames(weight2) <- outcomes
     myweights <- list(as.matrix(weight1),as.matrix(weight2))
   }
-
+  
   if (binary) {
     binary(model1) <- outcomes
     regfix(model1,from=c("e1","e2"), to=outcomes) <- list(1,1) 
     binary(model2) <- outcomes
     regfix(model2,from=c("e1","e2"), to=outcomes) <- list(1,1) 
   }
-  
+
+
 ###Estimate
   newkeep <- as.vector(sapply(keep, function(x) paste(x,1:2,sep=".")))
 ##  return(list(model=list(model1,model2), data=list(wide1,wide2)))
@@ -253,10 +272,30 @@ summary.twinlm <- function(object,...) {
   varSigma[lambda.w,lambda.w] <- e$vcov[unlist(lambda.idx),unlist(lambda.idx)]
   zygtab <- with(object, table(data[,status]))
 
-  if ("e1"%in%latent(e) & object$binary) {
+  varcomp <- c()
+  genpos <- c()
+  pos <- 0
+  if ("e1"%in%latent(e) & object$binary) {    
     varEst[4] <- 1
+    if ("a1"%in%latent(e)) { varcomp <- "lambda[a]"; pos <- pos+1; genpos <- c(genpos,pos) }
+    if ("c1"%in%latent(e)) { varcomp <- c(varcomp,"lambda[c]"); pos <- pos+1 }
+    if ("d1"%in%latent(e)) { varcomp <- c(varcomp,"lambda[d]"); pos <- pos+1;
+                             genpos <- c(genpos,pos) }
+    f <- paste("h2~",paste(varcomp,collapse="+"))
+    constrain(e, as.formula(f)) <- function(x) logit(sum(x[genpos])^2/sum(x^2+1))
+  } else {
+    varcomp <- c()
+        if ("a1"%in%latent(e)) { varcomp <- "lambda[a]"; pos <- pos+1;
+                                 genpos <- c(genpos,pos) }
+    if ("c1"%in%latent(e)) { varcomp <- c(varcomp,"lambda[c]"); pos <- pos+1 }
+    if ("d1"%in%latent(e)) { varcomp <- c(varcomp,"lambda[d]"); pos <- pos+1;
+                             genpos <- c(genpos,pos) }
+    if ("e1"%in%latent(e)) { varcomp <- c(varcomp,"lambda[e]"); pos <- pos+1 }
+    f <- paste("h2~",paste(varcomp,collapse="+"))
+    constrain(e, as.formula(f)) <- function(x) logit(sum(x[genpos])^2/sum(x^2))
   }
-
+  ci.logit <- tigol(constraints(e)["h2",5:6])
+  
   h <- function(x) (x[1]^2)/(sum(x^2))
   dh <- function(x) {
     y <- x^2
@@ -281,7 +320,7 @@ summary.twinlm <- function(object,...) {
   h2val <- cbind(h2(varEst), (t(dh2(varEst))%*%varSigma%*%(dh2(varEst)))^0.5)
   colnames(h2val) <- c("Estimate", "Std.Err"); rownames(h2val) <- "h squared"
   
-  res <- list(estimate=myest, zyg=zygtab, varEst=varEst, varSigma=varSigma, hval=hval, h2val=h2val)
+  res <- list(estimate=myest, zyg=zygtab, varEst=varEst, varSigma=varSigma, hval=hval, h2val=h2val, ci.logit=ci.logit)
   class(res) <- "summary.twinlm"
   return(res)
 }
@@ -307,7 +346,9 @@ print.summary.twinlm <- function(x,signif.stars=FALSE,...) {
 ##  print(x$hval)
 ##  cat("\n")
   cat("heritability (total genetic factors):\n")
-  print(x$h2val)
+  h <- c(x$h2val,x$ci.logit);
+  names(h) <- c("Estimate","Std.Err",names(x$ci.logit))
+  print(h)
   cat("\n")
   cat("Correlation within MZ:", sum(x$varEst[1:3]^2)/sum(x$varEst^2), "\n")
   cat("Correlation within DZ:", sum(x$varEst[1:3]^2*c(0.5,1,0.25))/sum(x$varEst^2), "\n") 
