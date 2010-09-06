@@ -62,7 +62,7 @@ twinlm <- function(formula, data, type=c("ace"), twinid="id", status="zyg", DZ, 
     colnames(cur) <- c(yvar,keep,twinnum,twinid,status)
     mydata <- cbind(cur,mm)
     if (missing(DZ)) {
-      warning("Using first level in status variable as indicator for 'dizygotic'")
+      warning("Using first level, `",zyglev[1],"', in status variable as indicator for 'dizygotic'", sep="")
       DZ <- zyglev[1]
     }
     myDZ <- which(levels(zygstat)==DZ)
@@ -112,7 +112,7 @@ twinlm <- function(formula, data, type=c("ace"), twinid="id", status="zyg", DZ, 
   wide2 <- merge(x=data2.1,y=data2.2, by=twinid)
 
   
-  Debug("Models...",debug)
+##  Debug("Models...",debug)
     
     ## ###### The SEM
     outcomes <- paste(yvar,".",1:2,sep="")
@@ -272,6 +272,7 @@ summary.twinlm <- function(object,...) {
   varSigma[lambda.w,lambda.w] <- e$vcov[unlist(lambda.idx),unlist(lambda.idx)]
   zygtab <- with(object, table(data[,status]))
 
+  L <- binomial(logit)
   varcomp <- c()
   genpos <- c()
   pos <- 0
@@ -282,7 +283,7 @@ summary.twinlm <- function(object,...) {
     if ("d1"%in%latent(e)) { varcomp <- c(varcomp,"lambda[d]"); pos <- pos+1;
                              genpos <- c(genpos,pos) }
     f <- paste("h2~",paste(varcomp,collapse="+"))
-    constrain(e, as.formula(f)) <- function(x) logit(sum(x[genpos])^2/sum(x^2+1))
+    constrain(e, as.formula(f)) <- function(x) L$linkfun(sum(x[genpos])^2/sum(x^2+1))
   } else {
     varcomp <- c()
         if ("a1"%in%latent(e)) { varcomp <- "lambda[a]"; pos <- pos+1;
@@ -292,9 +293,9 @@ summary.twinlm <- function(object,...) {
                              genpos <- c(genpos,pos) }
     if ("e1"%in%latent(e)) { varcomp <- c(varcomp,"lambda[e]"); pos <- pos+1 }
     f <- paste("h2~",paste(varcomp,collapse="+"))
-    constrain(e, as.formula(f)) <- function(x) logit(sum(x[genpos])^2/sum(x^2))
+    constrain(e, as.formula(f)) <- function(x) L$linkfun(sum(x[genpos])^2/sum(x^2))
   }
-  ci.logit <- tigol(constraints(e)["h2",5:6])
+  ci.logit <- L$linkinv(constraints(e)["h2",5:6])
   
   h <- function(x) (x[1]^2)/(sum(x^2))
   dh <- function(x) {
@@ -397,17 +398,19 @@ model.frame.twinlm <- function(formula,...) {
 
 ###{{{ twinsim
 
-twinsim <- function(n=100,k1=1,k2=1,mu=0,lambda=c(1,1,1),randomslope=NULL,type="ace",binary=FALSE,...) {
+twinsim <- function(n=100,k1=c(),k2=1,mu=0,lambda=c(1,1,1),randomslope=NULL,type="ace",binary=FALSE,...) {
   mysep <- ""
   outcomes <- paste("y",mysep,1:2,sep="")
   covars <- covars2 <- NULL
-  if (k1>0) {
-    covars <- paste("x",1:k1,sep="")
+  nk1 <- length(k1)
+  nk2 <- length(k2)
+  if (nk1>0) {
+    covars <- paste("z",1:nk1,sep="")
     covars.1 <- paste(covars,mysep,"1",sep="")
     covars.2 <- paste(covars,mysep,"2",sep="")
   }
-  if (k2>0)
-    covars2 <- paste("g",1:k2 ,sep="")
+  if (nk2>0)
+    covars2 <- paste("x",1:nk2 ,sep="")
   model1<-lvm(outcomes,silent=TRUE)
   f1 <- as.formula(paste(outcomes[1]," ~ ."))
   f2 <- as.formula(paste(outcomes[2]," ~ ."))
@@ -501,9 +504,21 @@ twinsim <- function(n=100,k1=1,k2=1,mu=0,lambda=c(1,1,1),randomslope=NULL,type="
   regfix(sim.model1,to=outcomes[1],from="c1") <- lambda[2]
   regfix(sim.model1,to=outcomes[2],from="c1") <- lambda[2]
   regfix(sim.model1,to=outcomes[1],from="e1") <- lambda[3]
-  regfix(sim.model1,to=outcomes[2],from="e2") <- lambda[3]  
+  regfix(sim.model1,to=outcomes[2],from="e2") <- lambda[3]
+  if (nk1>0) {
+    for (i in 1:nk1) {
+        regfix(sim.model1, from=covars.1[i], to=outcomes[1],silent=TRUE) <- k1[i]
+        regfix(sim.model1, from=covars.2[i], to=outcomes[2],silent=TRUE) <- k1[i]
+      }    
+  }
+  if (nk2>0) {
+    for (i in 1:nk2) {
+      regfix(sim.model1,from=covars2[i],to=outcomes[1],silent=TRUE) <- k2[i]
+      regfix(sim.model1,from=covars2[i],to=outcomes[2],silent=TRUE) <- k2[i]
+    }
+  }
+  
   sim.model2 <- model2
-
   intfix(sim.model2,outcomes) <- mu
   regfix(sim.model2,to=outcomes[1],from="a1") <- lambda[1]
   regfix(sim.model2,to=outcomes[2],from="a2") <- lambda[1]
@@ -511,6 +526,18 @@ twinsim <- function(n=100,k1=1,k2=1,mu=0,lambda=c(1,1,1),randomslope=NULL,type="
   regfix(sim.model2,to=outcomes[2],from="c1") <- lambda[2]
   regfix(sim.model2,to=outcomes[1],from="e1") <- lambda[3]
   regfix(sim.model2,to=outcomes[2],from="e2") <- lambda[3]
+  if (nk1>0) {
+    for (i in 1:nk1) {
+        regfix(sim.model2, from=covars.1[i], to=outcomes[1],silent=TRUE) <- k1[i]
+        regfix(sim.model2, from=covars.2[i], to=outcomes[2],silent=TRUE) <- k1[i]
+      }    
+  }
+  if (nk2>0) {
+    for (i in 1:nk2) {
+      regfix(sim.model2,from=covars2[i],to=outcomes[1],silent=TRUE) <- k2[i]
+      regfix(sim.model2,from=covars2[i],to=outcomes[2],silent=TRUE) <- k2[i]
+    }
+  }
 
 
   if (binary) {
@@ -524,9 +551,8 @@ twinsim <- function(n=100,k1=1,k2=1,mu=0,lambda=c(1,1,1),randomslope=NULL,type="
   d1$zyg <- "MZ"; d1$twinid <- 1:nrow(d1)
   d2$zyg <- "DZ"; d2$twinid <- 1:nrow(d2)  
   varying <- outcomes
-  if(k1>0)
+  if(nk1>0)
     varying <- rbind(varying, cbind(covars.1,covars.2))
-
 
   
   dd1 <- reshape(d1[,c(manifest(model1),"zyg","twinid")], varying=varying,
@@ -540,8 +566,10 @@ twinsim <- function(n=100,k1=1,k2=1,mu=0,lambda=c(1,1,1),randomslope=NULL,type="
                  times=c(1,2),
                  v.names=c("y",covars))
   long <- rbind(dd1,dd2)
+  Wide <- rbind(subset(d1,select=c(manifest(model1),"zyg","twinid")),
+                subset(d2,select=c(manifest(model2),"zyg","twinid")))
   
-  return(list(data=long,model=list(model1,model2),wide=list(d1,d2)))
+  return(list(data=long,model=list(model1,model2),wide=list(d1,d2),Wide=Wide))
 }
 
 ###}}}
