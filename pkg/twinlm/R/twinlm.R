@@ -29,7 +29,10 @@ twinlm <- function(formula, data, type=c("ace"), twinid="id", status="zyg", DZ, 
     data[,"_weight"] <- weight
     keep <- "_weight"
   }
-  
+  if (is.factor(data[,yvar]) | is.character(data[,yvar])) {
+    data[,yvar] <- 1-as.numeric(as.factor(data[,yvar]))
+    binary <- TRUE
+  }  
   
   opt <- options(na.action="na.pass")
   ##  mm <- naresid(na.exclude, model.matrix(formula,data))
