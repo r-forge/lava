@@ -275,7 +275,7 @@ summary.twinlm <- function(object,...) {
   varSigma[lambda.w,lambda.w] <- e$vcov[unlist(lambda.idx),unlist(lambda.idx)]
   zygtab <- with(object, table(data[,status]))
 
-  L <- binomial(logit)
+  L <- binomial("logit")
   varcomp <- c()
   genpos <- c()
   pos <- 0

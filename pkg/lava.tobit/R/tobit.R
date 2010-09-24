@@ -10,7 +10,7 @@ tobit_objective.lvm <- function(x,p,data,weight,indiv=FALSE,
     save.seed <- .Random.seed
     set.seed(seed)
   }
-  require(mvtnorm)
+  require("mvtnorm")
   zz <- manifest(x)
   d <- as.matrix(rbind(data)[,zz,drop=FALSE]);
   colnames(d) <- zz  
@@ -88,7 +88,7 @@ tobit_gradient.lvm <- function(x,p,data,weight,indiv=FALSE,
     save.seed <- .Random.seed
     set.seed(seed)
   }
-  require(mvtnorm)
+  require("mvtnorm")
   zz <- manifest(x)
   d <- as.matrix(data[,zz,drop=FALSE]); colnames(d) <- zz
   yy <- endogenous(x)
@@ -155,7 +155,7 @@ tobit_hessian.lvm <- function(p,model,data,weight,...) {
 ###{{{ Log-likelihood
 
 tobit_logLik.lvm <- function(object,p,data,weight, ...) {
-  res <- -tobit_objective.lvm(x=object,p=p,data=data,weight=weight,...) - gaussian_logLik.lvm(object,p=p,data=data,type="exo",weight=NULL,...)
+  res <- -tobit_objective.lvm(x=object,p=p,data=data,weight=weight,...) - lava:::gaussian_logLik.lvm(object,p=p,data=data,type="exo",weight=NULL,...)
   return(res)
 }
 
@@ -259,7 +259,7 @@ Dpmvnorm <- function(Y,S,mu=rep(0,NROW(S)),std=FALSE,seed=1,
                      algorithm=GenzBretz(abseps=1e-5),...) {
   if (!exists(".Random.seed")) runif(1)
   save.seed <- .Random.seed
-  require(mvtnorm)
+  require("mvtnorm")
   if (!std) {
     L <- diag(S)^0.5
     Li <- diag(1/L,NROW(S))
@@ -372,7 +372,7 @@ mom.cens <- function(x,p,cens.idx,data,deriv=TRUE,conditional=TRUE,right=TRUE,..
 ##  browser()
   M <- moments(x,p,data=as.data.frame(data))
   if (deriv)
-    D <- deriv.lvm(x,p=p,mom=M,meanpar=TRUE) ##,mu=colMeans(data))
+    D <- deriv(x,p=p,mom=M,meanpar=TRUE) ##,mu=colMeans(data))
 
   if (length(cens.idx)<1) {
     res <- list(S.obs=M$C, mu.obs=M$xi, S.cens=NULL, mu.cens=NULL,
