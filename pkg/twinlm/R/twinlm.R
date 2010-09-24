@@ -17,7 +17,7 @@ twinlm <- function(formula, data, type=c("ace"), twinid="id", status="zyg", DZ, 
   cl <- match.call()
   mf <- model.frame(formula,data)
   mt <- attr(mf, "terms")
-  y <- model.response(mf, "numeric")
+  y <- model.response(mf, "any")
   formula <- update(formula, ~ . + 1)
   yvar <- getoutcome(formula)
 
@@ -30,7 +30,7 @@ twinlm <- function(formula, data, type=c("ace"), twinid="id", status="zyg", DZ, 
     keep <- "_weight"
   }
   if (is.factor(data[,yvar]) | is.character(data[,yvar])) {
-    data[,yvar] <- 1-as.numeric(as.factor(data[,yvar]))
+    data[,yvar] <- as.numeric(as.factor(data[,yvar]))-1
     binary <- TRUE
   }  
   
