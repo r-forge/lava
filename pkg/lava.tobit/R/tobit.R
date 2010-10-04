@@ -105,7 +105,6 @@ tobit_gradient.lvm <- function(x,p,data,weight,indiv=FALSE,
                      function(x) which(apply(patterns,1,function(y) identical(x,y))))  
   val <- 0
   score <- c()
-##  browser()
   for (i in 1:nrow(patterns)) {
     ## Usual marginal likelihood for status==1
     pat <- patterns[i,]
@@ -121,17 +120,20 @@ tobit_gradient.lvm <- function(x,p,data,weight,indiv=FALSE,
     right.cens.y <- zz[right.cens.idx] ##setdiff(zz,noncens.y)
 ##    browser()
     y <- d[idx,,drop=FALSE]
-##    y.pat <- unique(y,MARGIN=1)
+##    browser()
+    
+##    dummy <- cens.score(x,p,data=y,cens.idx=cens.idx, cens.which.left=cens.which.left, algorithm=algorithm)
+##    score <- rbind(score,dummy)
+ 
+    y.pat <- unique(y,MARGIN=1)
 ##    system.time(
-##   y.type <- apply(y,1,
-##                   function(x) which(apply(y.pat,1,function
-##                                           (z) identical(x,z))))
+        y.type <- apply(y,1,
+                   function(x) which(apply(y.pat,1,function
+                                           (z) identical(x,z))))
 ##                )    
-    ##    browser()
-  ## dummy <- cens.score(x,p,data=y.pat,cens.idx=cens.idx, cens.which.left=cens.which.left, algorithm=algorithm)
-        dummy <- cens.score(x,p,data=y,cens.idx=cens.idx, cens.which.left=cens.which.left, algorithm=algorithm)
-##   score <- rbind(score,dummy[y.type,,drop=FALSE])
-    score <- rbind(score,dummy)    
+   dummy <- cens.score(x,p,data=y.pat,cens.idx=cens.idx, cens.which.left=cens.which.left, algorithm=algorithm)
+    score <- rbind(score,dummy[y.type,,drop=FALSE])
+##    browser()
     ##    dummy <- cens.score(x,p,data=y,cens.idx=cens.idx, cens.which.left=cens.which.left)
     ##    score <- rbind(score,dummy)
   }
@@ -166,20 +168,20 @@ tobit_logLik.lvm <- function(object,p,data,weight, ...) {
 cens.score <- function(x,p,data,cens.idx,cens.which.left,...) {
   obs.idx <- setdiff(1:NCOL(data),cens.idx)
   n <- NROW(data)
-##  browser()
   M <- mom.cens(x,p,data=data,cens.idx=cens.idx,conditional=TRUE,deriv=TRUE)
   ## Censored part:
   if (length(cens.idx)>0) {
 
-    combcens <- -1*(length(cens.which.left)>0) +
-      length(cens.which.left)==length(cens.idx)
+    combcens <- 1*(length(cens.which.left)>0) +
+      -1*(length(cens.which.left)<length(cens.idx))
+##    browser()
     ## 0: left and right, -1: left only, 1: right only
  
 ##     mu <- M$mu.cens
 ##     S <- M$S.cens
 ##     dmu <- M$dmu.cens
 ##     dS <- M$dS.cens
-    z <- (matrix(data[,cens.idx],nrow=n))
+    z <- matrix(data[,cens.idx],nrow=n)
     ##    z <- data[,cens.idx,drop=FALSE]
     DCDFs <- c()
 
@@ -221,6 +223,7 @@ cens.score <- function(x,p,data,cens.idx,cens.which.left,...) {
     ##    S0 <- 1/attributes(DCDF)$cdf*DCDF
     S0 <- DCDFs    
   } else S0 <- 0
+
   ## Observed part:
   if (length(obs.idx)>0) {
     y1 <- as.matrix(data[,obs.idx,drop=FALSE])
