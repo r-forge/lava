@@ -11,7 +11,7 @@ tobit_objective.lvm <- function(x,p,data,weight,indiv=FALSE,
     set.seed(seed)
   }
   require("mvtnorm")
-  zz <- manifest(x)
+  zz <- manifest(x) 
   d <- as.matrix(rbind(data)[,zz,drop=FALSE]);
   colnames(d) <- zz  
   yy <- endogenous(x)
@@ -124,19 +124,26 @@ tobit_gradient.lvm <- function(x,p,data,weight,indiv=FALSE,
     
 ##    dummy <- cens.score(x,p,data=y,cens.idx=cens.idx, cens.which.left=cens.which.left, algorithm=algorithm)
 ##    score <- rbind(score,dummy)
- 
+
+##    browser()
     y.pat <- unique(y,MARGIN=1)
 ##    system.time(
         y.type <- apply(y,1,
                    function(x) which(apply(y.pat,1,function
                                            (z) identical(x,z))))
 ##                )    
-   dummy <- cens.score(x,p,data=y.pat,cens.idx=cens.idx, cens.which.left=cens.which.left, algorithm=algorithm)
+
+##    print(system.time(
+                      dummy <- cens.score(x,p,data=y.pat,cens.idx=cens.idx, cens.which.left=cens.which.left, algorithm=algorithm)
+##                      ))
     score <- rbind(score,dummy[y.type,,drop=FALSE])
+
+##    score <- rbind(0)
 ##    browser()
     ##    dummy <- cens.score(x,p,data=y,cens.idx=cens.idx, cens.which.left=cens.which.left)
     ##    score <- rbind(score,dummy)
   }
+  
   if (!is.null(seed))
     set.seed(save.seed)
   if (indiv)
@@ -156,8 +163,12 @@ tobit_hessian.lvm <- function(p,model,data,weight,...) {
 
 ###{{{ Log-likelihood
 
-tobit_logLik.lvm <- function(object,p,data,weight, ...) {
-  res <- -tobit_objective.lvm(x=object,p=p,data=data,weight=weight,...) - lava:::gaussian_logLik.lvm(object,p=p,data=data,type="exo",weight=NULL,...)
+tobit_logLik.lvm <- function(object,p,data,weight,...) {
+  res <- -tobit_objective.lvm(x=object,p=p,data=data,weight=weight,...)
+  args <- list(...)
+  args$object <- object; args$p <- p; args$data <- data; args$type <- "exo"; args$weight <- NULL
+  ##xl <- lava:::gaussian_logLik.lvm(object,p=p,data=data,type="exo",weight=NULL,...)
+  res <- res - do.call(gaussian_logLik.lvm,args)
   return(res)
 }
 
@@ -168,8 +179,11 @@ tobit_logLik.lvm <- function(object,p,data,weight, ...) {
 cens.score <- function(x,p,data,cens.idx,cens.which.left,...) {
   obs.idx <- setdiff(1:NCOL(data),cens.idx)
   n <- NROW(data)
-  M <- mom.cens(x,p,data=data,cens.idx=cens.idx,conditional=TRUE,deriv=TRUE)
+##  print(system.time(
+                    M <- mom.cens(x,p,data=data,cens.idx=cens.idx,conditional=TRUE,deriv=TRUE)
+##))
   ## Censored part:
+##  browser()
   if (length(cens.idx)>0) {
 
     combcens <- 1*(length(cens.which.left)>0) +
@@ -187,6 +201,7 @@ cens.score <- function(x,p,data,cens.idx,cens.which.left,...) {
 
     S <- M$S.censIobs
     dS <- M$dS.censIobs
+
     if (combcens==0) {
       L <- -diag(length(cens.idx))
       L[cbind(cens.which.left,cens.which.left)] <- 1
@@ -206,16 +221,17 @@ cens.score <- function(x,p,data,cens.idx,cens.which.left,...) {
         mu <- -mu
         dmu <- -dmu
       }
-      DCDF <- Dthetapmvnorm(z[i,],
-                    ##        mu=L%*%M$mu.censIobs[i,],
+##      print(system.time(
+                        DCDF <- Dthetapmvnorm(z[i,],
+                                              ##        mu=L%*%M$mu.censIobs[i,],
                             mu=mu,
-##                            S=L%*%M$S.censIobs%*%L,
-                            S=S,
-##                            dS=(L%x%L)%*%M$dS.censIobs,
+                                              ##                            S=L%*%M$S.censIobs%*%L,
+                                              S=S,
+                                              ##                            dS=(L%x%L)%*%M$dS.censIobs,
                             dS=dS,
-##                            dmu=L%*%matrix(M$dmu.censIobs[,,i],nrow=length(cens.idx)),
-                            dmu=dmu,
-                            ...)
+                                              ##                            dmu=L%*%matrix(M$dmu.censIobs[,,i],nrow=length(cens.idx)),
+                                              dmu=dmu,
+                                              ...)                        
       alpha <- attributes(DCDF)$cdf
       DCDFs <- rbind(DCDFs, 1/alpha*DCDF)
     }
@@ -284,8 +300,8 @@ Dpmvnorm <- function(Y,S,mu=rep(0,NROW(S)),std=FALSE,seed=1,
   ## Cond. var of Y[-j] given Y[j]
   D <- numeric(k)
   for (j in 1:k) {
-    tcrossprod(S[-j,j,drop=FALSE])
-    Sj <- S[-j,-j,drop=FALSE] - tcrossprod(S[-j,j,drop=FALSE]) ##/S[j,j]
+##    tcrossprod(S[-j,j,drop=FALSE])
+    Sj <- S[-j,-j,drop=FALSE] - tcrossprod(S[-j,j,drop=FALSE]) ##/S[j,j] S=correlation
     muj <- Y[-j] - S[-j,j,drop=FALSE]*Y[j]
 #    set.seed(seed)
     D[j] <- dnorm(Y[j])*pmvnorm(upper=as.vector(muj),sigma=Sj,algorithm=algorithm)
@@ -296,7 +312,7 @@ Dpmvnorm <- function(Y,S,mu=rep(0,NROW(S)),std=FALSE,seed=1,
     diag(H) <- -Y*D -H[1,2]*S[1,2]
     ##as.vector((H*S)%*%rep(1,k))
   } else {
-    H[] <- 0
+    ##    H[] <- 0
     phis <- Phis <- H
     for (i in 1:(k-1)) {
       for (j in (i+1):k) {
@@ -348,7 +364,7 @@ Dthetapmvnorm <- function(yy,mu,S,dmu,dS,seed=1,
     z <- Li%*%(y-mu)
 #    set.seed(seed)
     a <- pmvnorm(upper=y,mean=as.numeric(mu),sigma=S,algorithm=algorithm)
-    DC <- Dpmvnorm(z,R,std=TRUE,algorithm=algorithm) 
+    DC <- Dpmvnorm(z,R,std=TRUE,algorithm=algorithm)
     MM <- -LR%*%(DC$grad)
     VV <- LR%*%(DC$hessian)%*%t(LR) + a*S    
     part1 <- K1*a

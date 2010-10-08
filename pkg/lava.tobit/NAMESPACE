@@ -8,6 +8,7 @@ export(
        tobit_gradient.lvm,
        tobit_hessian.lvm,
        tobit_logLik.lvm,
+       clprobit,
        lava.tobit.estimate.hook,
        lava.tobit.color.hook,
        lava.tobit.sim.hook
