@@ -2,14 +2,16 @@
 
 tobit_method.lvm <- "nlminb1"
 tobit_objective.lvm <- function(x,p,data,weight,indiv=FALSE,
-###                                algorithm=Miwa(),...) {
-                                algorithm=GenzBretz(abseps=1e-5),seed=NULL,...) {
+                                ##algorithm=Miwa(),
+                                algorithm=GenzBretz(abseps=1e-5),
+                                seed=1,...) {
 
   if (!is.null(seed)) {
     if (!exists(".Random.seed")) runif(1)
     save.seed <- .Random.seed
     set.seed(seed)
   }
+##  browser()
   require("mvtnorm")
   zz <- manifest(x) 
   d <- as.matrix(rbind(data)[,zz,drop=FALSE]);
@@ -28,7 +30,8 @@ tobit_objective.lvm <- function(x,p,data,weight,indiv=FALSE,
   xi <- mp$xi ## Model specific mean-vector
   ##  val <- 0
   val <- c()
-  for (i in 1:nrow(patterns)) {
+##  browser()
+  for (i in 1:nrow(patterns)) {    
     ## Usual marginal likelihood for status==1
     pat <- patterns[i,]
     idx <- which(cens.type==i)
@@ -81,8 +84,10 @@ tobit_objective.lvm <- function(x,p,data,weight,indiv=FALSE,
 
 
 tobit_gradient.lvm <- function(x,p,data,weight,indiv=FALSE,
-###                                algorithm=Miwa(),...) {
-                               algorithm=GenzBretz(abseps=1e-5),seed=NULL,...) {
+                               ##algorithm=Miwa(),
+                               algorithm=GenzBretz(abseps=1e-5),
+                               seed=1,...) {
+
   if (!is.null(seed)) {
     if (!exists(".Random.seed")) runif(1)
     save.seed <- .Random.seed
@@ -104,7 +109,8 @@ tobit_gradient.lvm <- function(x,p,data,weight,indiv=FALSE,
   cens.type <- apply(Status,1,
                      function(x) which(apply(patterns,1,function(y) identical(x,y))))  
   val <- 0
-  score <- c()
+##  score <- c()
+  score <- matrix(ncol=length(p),nrow=nrow(data))
   for (i in 1:nrow(patterns)) {
     ## Usual marginal likelihood for status==1
     pat <- patterns[i,]
@@ -118,28 +124,27 @@ tobit_gradient.lvm <- function(x,p,data,weight,indiv=FALSE,
     noncens.y <- zz[noncens.idx]
     left.cens.y <- zz[left.cens.idx]
     right.cens.y <- zz[right.cens.idx] ##setdiff(zz,noncens.y)
-##    browser()
     y <- d[idx,,drop=FALSE]
-##    browser()
+    ##    browser()
     
-##    dummy <- cens.score(x,p,data=y,cens.idx=cens.idx, cens.which.left=cens.which.left, algorithm=algorithm)
-##    score <- rbind(score,dummy)
+    dummy <- cens.score(x,p,data=y,cens.idx=cens.idx,cens.which.left=cens.which.left, algorithm=algorithm)
+    score[idx,] <- dummy
+    
+    ##    browser()
 
-##    browser()
-    y.pat <- unique(y,MARGIN=1)
-##    system.time(
-        y.type <- apply(y,1,
-                   function(x) which(apply(y.pat,1,function
-                                           (z) identical(x,z))))
-##                )    
-
-##    print(system.time(
-                      dummy <- cens.score(x,p,data=y.pat,cens.idx=cens.idx, cens.which.left=cens.which.left, algorithm=algorithm)
-##                      ))
-    score <- rbind(score,dummy[y.type,,drop=FALSE])
-
-##    score <- rbind(0)
-##    browser()
+    ##    y.pat <- unique(y,MARGIN=1)
+    ##    system.time(
+    ##    y.type <- apply(y,1,
+    ##                    function(x) which(apply(y.pat,1,function
+    ##                                            (z) identical(x,z))))
+    ##                )    
+    ##    print(system.time(
+    ##                      dummy <- cens.score(x,p,data=y.pat,cens.idx=cens.idx, cens.which.left=cens.which.left, algorithm=algorithm)
+    ##                      ))
+    ##    score <- rbind(score,dummy[y.type,,drop=FALSE])
+    
+    ##    score <- rbind(0)
+    ##    browser()
     ##    dummy <- cens.score(x,p,data=y,cens.idx=cens.idx, cens.which.left=cens.which.left)
     ##    score <- rbind(score,dummy)
   }
@@ -180,7 +185,7 @@ cens.score <- function(x,p,data,cens.idx,cens.which.left,...) {
   obs.idx <- setdiff(1:NCOL(data),cens.idx)
   n <- NROW(data)
 ##  print(system.time(
-                    M <- mom.cens(x,p,data=data,cens.idx=cens.idx,conditional=TRUE,deriv=TRUE)
+  M <- mom.cens(x,p,data=data,cens.idx=cens.idx,conditional=TRUE,deriv=TRUE)
 ##))
   ## Censored part:
 ##  browser()
@@ -216,22 +221,23 @@ cens.score <- function(x,p,data,cens.idx,cens.which.left,...) {
         mu <- L%*%mu
         dmu <- L%*%dmu
       }
+      zi <- z[i,]
       if (combcens==-1) {
-        z <- -z
+        zi <- -zi
         mu <- -mu
         dmu <- -dmu
       }
 ##      print(system.time(
-                        DCDF <- Dthetapmvnorm(z[i,],
-                                              ##        mu=L%*%M$mu.censIobs[i,],
+      DCDF <- Dthetapmvnorm(zi,
+                            ##        mu=L%*%M$mu.censIobs[i,],
                             mu=mu,
-                                              ##                            S=L%*%M$S.censIobs%*%L,
-                                              S=S,
-                                              ##                            dS=(L%x%L)%*%M$dS.censIobs,
+                            ##                            S=L%*%M$S.censIobs%*%L,
+                            S=S,
+                            ##                            dS=(L%x%L)%*%M$dS.censIobs,
                             dS=dS,
-                                              ##                            dmu=L%*%matrix(M$dmu.censIobs[,,i],nrow=length(cens.idx)),
-                                              dmu=dmu,
-                                              ...)                        
+                            ##                            dmu=L%*%matrix(M$dmu.censIobs[,,i],nrow=length(cens.idx)),
+                            dmu=dmu,
+                            ...)                        
       alpha <- attributes(DCDF)$cdf
       DCDFs <- rbind(DCDFs, 1/alpha*DCDF)
     }
@@ -240,7 +246,9 @@ cens.score <- function(x,p,data,cens.idx,cens.which.left,...) {
     S0 <- DCDFs    
   } else S0 <- 0
 
+  
   ## Observed part:
+  ##  S1 <- matrix() ...
   if (length(obs.idx)>0) {
     y1 <- as.matrix(data[,obs.idx,drop=FALSE])
     if (n==1) y. <- y1 else y. <- colMeans(y1)
@@ -274,8 +282,10 @@ cens.score <- function(x,p,data,cens.idx,cens.which.left,...) {
 
 ## Calculates first and second order partial derivatives of normal CDF
 Dpmvnorm <- function(Y,S,mu=rep(0,NROW(S)),std=FALSE,seed=1,
-###                     algorithm=Miwa(),...) {
-                     algorithm=GenzBretz(abseps=1e-5),...) {
+                     ## algorithm=Miwa(),
+                     algorithm=GenzBretz(abseps=1e-5),
+                     ...) {
+##  browser()
   if (!exists(".Random.seed")) runif(1)
   save.seed <- .Random.seed
   require("mvtnorm")
@@ -341,8 +351,9 @@ Dpmvnorm <- function(Y,S,mu=rep(0,NROW(S)),std=FALSE,seed=1,
 ## Calculates first and second order partial derivatives of normal CDF
 ## w.r.t. parameter-vector!
 Dthetapmvnorm <- function(yy,mu,S,dmu,dS,seed=1,
-###                          algorithm=Miwa(),...) {
-                          algorithm=GenzBretz(abseps=1e-5),...) {
+                          ##algorithm=Miwa(),
+                          algorithm=GenzBretz(abseps=1e-5),
+                          ...) {
   if (!exists(".Random.seed")) runif(1)
   save.seed <- .Random.seed
   ##yy <- as.matrix(yy)

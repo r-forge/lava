@@ -18,8 +18,8 @@ clprobit <- function(x,data,k=2,type=c("nearest","all"),pairlist,silent=TRUE,
     data0 <- data; data0[,binpos[-mypar[,ii]]] <- NA
     mydata <- rbind(mydata,data0)
   }
-  e0 <- estimate(x,data=mydata,missing=TRUE,silent=silent,
-              ...)
+  suppressWarnings(e0 <- estimate(x,data=mydata,missing=TRUE,silent=silent,
+              ...))
   S <- score(e0,indiv=TRUE)
   nd <- nrow(data)
   block1 <- which((1:nd)%in%(rownames(S)))
@@ -30,10 +30,16 @@ clprobit <- function(x,data,k=2,type=c("nearest","all"),pairlist,silent=TRUE,
   }
   iI <- vcov(e0); J <- t(Siid)%*%(Siid)
   e0$iidscore <- Siid
+  e0$blocks <- blocks
   e0$vcov <- iI%*%J%*%iI
   cc <- e0$coef; cc[,2] <- sqrt(diag(e0$vcov))
   cc[,3] <- cc[,1]/cc[,2]; cc[,4] <- 2*(1-pnorm(cc[,3]))
   e0$coef <- cc
   class(e0) <- c("clprobit",class(e0))
   return(e0)
+}
+score.clprobit <- function(x,indiv=FALSE,...) {
+  if (!indiv)
+    return(colSums(x$iidscore))
+  x$iidscore
 }
