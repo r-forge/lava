@@ -2,9 +2,8 @@
 
 tobit_method.lvm <- "nlminb1"
 tobit_objective.lvm <- function(x,p,data,weight,indiv=FALSE,
-                                ##algorithm=Miwa(),
-                                algorithm=GenzBretz(abseps=1e-5),
-                                seed=1,...) {
+                                algorithm=lava.options()$tobitAlgorithm,
+                                seed=lava.options()$tobitseed,...) {
 
   if (!is.null(seed)) {
     if (!exists(".Random.seed")) runif(1)
@@ -76,7 +75,7 @@ tobit_objective.lvm <- function(x,p,data,weight,indiv=FALSE,
     val <- c(val,-val1-val0)
   }
   if (!is.null(seed))
-    set.seed(save.seed)
+    .Random.seed <<- save.seed
   if (!indiv)
     return(sum(val))
   val
@@ -84,9 +83,8 @@ tobit_objective.lvm <- function(x,p,data,weight,indiv=FALSE,
 
 
 tobit_gradient.lvm <- function(x,p,data,weight,indiv=FALSE,
-                               ##algorithm=Miwa(),
-                               algorithm=GenzBretz(abseps=1e-5),
-                               seed=1,...) {
+                               algorithm=lava.options()$tobitAlgorithm,
+                               seed=lava.options()$tobitseed,...) {
 
   if (!is.null(seed)) {
     if (!exists(".Random.seed")) runif(1)
@@ -150,7 +148,7 @@ tobit_gradient.lvm <- function(x,p,data,weight,indiv=FALSE,
   }
   
   if (!is.null(seed))
-    set.seed(save.seed)
+    .Random.seed <<- save.seed
   if (indiv)
     return(-score)
   return(-colSums(score))
@@ -254,7 +252,7 @@ cens.score <- function(x,p,data,cens.idx,cens.which.left,...) {
     if (n==1) y. <- y1 else y. <- colMeans(y1)
     mu <- M$mu.obs
     S <- M$S.obs
-    iS <- solve(S)
+    iS <- Inverse(S)
     dS <- M$dS.obs
     dmu <- M$dmu.obs
     S1 <- c()
@@ -281,13 +279,15 @@ cens.score <- function(x,p,data,cens.idx,cens.which.left,...) {
 ###{{{ Derivatives of normal CDF
 
 ## Calculates first and second order partial derivatives of normal CDF
-Dpmvnorm <- function(Y,S,mu=rep(0,NROW(S)),std=FALSE,seed=1,
-                     ## algorithm=Miwa(),
-                     algorithm=GenzBretz(abseps=1e-5),
+Dpmvnorm <- function(Y,S,mu=rep(0,NROW(S)),std=FALSE,seed=lava.options()$tobitseed,
+                     algorithm=lava.options()$tobitAlgorithm,
                      ...) {
 ##  browser()
-  if (!exists(".Random.seed")) runif(1)
-  save.seed <- .Random.seed
+  k <- NROW(S)
+  if (!is.null(seed) & k>1) {
+    if (!exists(".Random.seed")) runif(1)
+    save.seed <- .Random.seed
+  }
   require("mvtnorm")
   if (!std) {
     L <- diag(S)^0.5
@@ -301,7 +301,6 @@ Dpmvnorm <- function(Y,S,mu=rep(0,NROW(S)),std=FALSE,seed=1,
   ##  Y <- as.numeric(Y)
   Y <- as.vector(Y)
   
-  k <- NROW(S)
   if (k==1) {
     D <- dnorm(Y,sd=as.vector(S)^0.5)
     H <- -Y*D
@@ -327,7 +326,7 @@ Dpmvnorm <- function(Y,S,mu=rep(0,NROW(S)),std=FALSE,seed=1,
     for (i in 1:(k-1)) {
       for (j in (i+1):k) {
         Snij <- S[-c(i,j),c(i,j),drop=FALSE]
-        B <- Snij%*%solve(S[c(i,j),c(i,j)])
+        B <- Snij%*%Inverse(S[c(i,j),c(i,j)])
         Sij <- S[-c(i,j),-c(i,j),drop=FALSE] - B%*%t(Snij)
         muij <- Y[-c(i,j)] - B%*%Y[c(i,j)]
 #        set.seed(seed)
@@ -339,29 +338,31 @@ Dpmvnorm <- function(Y,S,mu=rep(0,NROW(S)),std=FALSE,seed=1,
     diag(H) <- -Y*D - as.vector((S*H)%*%rep(1,k))    
   }
   if (!std) {
-#    set.seed(seed)
+    if (!is.null(seed))
+      set.seed(save.seed)
     a <- pmvnorm(upper=Y,mean=as.numeric(mu),sigma=S,algorithm=algorithm)
-#    set.seed(save.seed)
     return(list(grad=Li%*%D, hessian=Li%*%H%*%Li, R=S, CDF=a, S=S0, mu=mu, L=L, Li=Li))
   }
-#  set.seed(save.seed)
+  if (!is.null(seed))
+    .Random.seed <<- save.seed
   return(list(grad=D,hessian=H))
 }
 
 ## Calculates first and second order partial derivatives of normal CDF
 ## w.r.t. parameter-vector!
-Dthetapmvnorm <- function(yy,mu,S,dmu,dS,seed=1,
-                          ##algorithm=Miwa(),
-                          algorithm=GenzBretz(abseps=1e-5),
+Dthetapmvnorm <- function(yy,mu,S,dmu,dS,seed=lava.options()$tobitseed,
+                          algorithm=lava.options()$tobitAlgorithm,
                           ...) {
-  if (!exists(".Random.seed")) runif(1)
-  save.seed <- .Random.seed
+  if (!is.null(seed)) {
+    if (!exists(".Random.seed")) runif(1)
+    save.seed <- .Random.seed
+  }
   ##yy <- as.matrix(yy)
   ##  pp <- modelPar(x,p)
   ##  M <- moments(x,p)
   ##  mu <- M$xi
   ##  S <- M$C
-  iS <- solve(S)  
+  iS <- Inverse(S)  
   ##  DCDF <- Dpmvnorm(y,S,mu)
   L <- diag(S)^0.5
   Li <- diag(1/L,NROW(S))
@@ -389,7 +390,8 @@ Dthetapmvnorm <- function(yy,mu,S,dmu,dS,seed=1,
   a <- DD[,1]
   res <- DD[,-1,drop=FALSE]
   attributes(res)$cdf <- a
-#  set.seed(save.seed)
+  if (!is.null(seed))
+    .Random.seed <<- save.seed
   return(res)
 }
 
@@ -429,7 +431,7 @@ mom.cens <- function(x,p,cens.idx,data,deriv=TRUE,conditional=TRUE,right=TRUE,..
   S.obscens <- M$C[obs.idx,cens.idx,drop=FALSE]
   mu.obs <- M$xi[obs.idx]
   mu.cens <- M$xi[cens.idx]
-  iS.obs <- solve(S.obs)
+  iS.obs <- Inverse(S.obs)
 
   S01iS0 <- S.censobs%*%iS.obs
   S.cond <- S.cens - S01iS0%*%S.obscens

@@ -9,9 +9,7 @@ lava.tobit.color.hook <- function(x,subset=vars(x),...) {
 }
 
 lava.tobit.estimate.hook <- function(x,data,weight,estimator,...) {
-  dots <- list(...)
-
-  
+  dots <- list(...) 
 ## Binary outcomes -> censored regression  
   if (estimator%in%c("gaussian","tobit")) {
     for (i in setdiff(endogenous(x),binary(x))) {
