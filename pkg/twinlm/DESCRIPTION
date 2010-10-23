@@ -1,8 +1,8 @@
 Package: twinlm
 Type: Package
 Title: Linear models for twin data
-Version: 0.2-1
-Date: 2010-09-23
+Version: 0.2-2
+Date: 2010-10-11
 Author: Klaus K. Holst
 Maintainer: Klaus K. Holst <kkho@biostat.ku.dk>
 Description: Implementation of the classical twin variance component models (ACE/ADE/AE)

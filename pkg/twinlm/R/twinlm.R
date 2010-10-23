@@ -1,6 +1,6 @@
 ###{{{ twinlm
 
-twinlm <- function(formula, data, type=c("ace"), twinid="id", status="zyg", DZ, twinnum="twin",weight, binary=FALSE,keep=NULL,debug=FALSE,estimator="gaussian",...) {
+twinlm <- function(formula, data, type=c("ace"), twinid="id", status="zyg", DZ, twinnum="twinnum",weight,binary=FALSE,probitscale=1,keep=NULL,debug=FALSE,estimator="gaussian",...) {
 
   if (!missing(weight)) {
     if (is.character(weight)) {
@@ -43,33 +43,38 @@ twinlm <- function(formula, data, type=c("ace"), twinid="id", status="zyg", DZ, 
   if (attr(terms(formula),"intercept")==1)
     covars <- covars[-1]
   if(length(covars)<1) covars <- NULL
+
+  zygstat <- data[,status]
+  if(!is.factor(zygstat)) {
+    ##      warning("Transforming zygosity status variable to a factor.")
+    zygstat <- as.factor(zygstat)
+  }
+  zyglev <- levels(zygstat)
+  if (length(zyglev)>2) stop("Only support for two zygosity levels")
   
-    zygstat <- data[,status]
-    if(!is.factor(zygstat)) {
-      ##      warning("Transforming zygosity status variable to a factor.")
-      zygstat <- as.factor(zygstat)
-    }
-    zyglev <- levels(zygstat)
-    if (length(zyglev)>2) stop("Only support for two zygosity levels")
-  
-    ## Get data on wide format and divide into two groups by zygosity
-    if (!twinnum%in%names(data)) {
-      mynum <- rep(2,nrow(data))
-      firsttwin.Z1 <- sapply(unique(data[zygstat==zyglev[1],twinid]), function(x) which(data[zygstat==zyglev[1],twinid]==x)[1])
-      firsttwin.Z2 <- sapply(unique(data[zygstat==zyglev[2],twinid]), function(x) which(data[zygstat==zyglev[2],twinid]==x)[1])
-      mynum[zygstat==zyglev[1]][firsttwin.Z1] <- 1
-      mynum[zygstat==zyglev[2]][firsttwin.Z2] <- 1
-      data[,twinnum] <- mynum
-    }
-    cur <- cbind(data[,c(yvar,keep)],as.numeric(data[,twinnum]),as.numeric(data[,twinid]),as.numeric(zygstat));
-    colnames(cur) <- c(yvar,keep,twinnum,twinid,status)
-    mydata <- cbind(cur,mm)
-    if (missing(DZ)) {
-      warning("Using first level, `",zyglev[1],"', in status variable as indicator for 'dizygotic'", sep="")
-      DZ <- zyglev[1]
-    }
-    myDZ <- which(levels(zygstat)==DZ)
-    myMZ <- setdiff(1:2,myDZ)
+  ## Get data on wide format and divide into two groups by zygosity
+  if (!twinnum%in%names(data)) {
+##    mynum <- rep(2,nrow(data))
+##    firsttwin.Z1 <- sapply(unique(data[zygstat==zyglev[1],twinid]), function(x) which(data[zygstat==zyglev[1],twinid]==x)[1])
+##    firsttwin.Z2 <- sapply(unique(data[zygstat==zyglev[2],twinid]), function(x) which(data[zygstat==zyglev[2],twinid]==x)[1])
+##    mynum[zygstat==zyglev[1]][firsttwin.Z1] <- 1
+##    mynum[zygstat==zyglev[2]][firsttwin.Z2] <- 1
+    mynum <- rep(1,nrow(data))
+    mynum[duplicated(data[zygstat==zyglev[1],twinid])] <- 2
+    mynum[duplicated(data[zygstat==zyglev[2],twinid])] <- 2
+    data[,twinnum] <- mynum
+  }
+
+  cur <- cbind(data[,c(yvar,keep)],as.numeric(data[,twinnum]),as.numeric(data[,twinid]),as.numeric(zygstat));
+  colnames(cur) <- c(yvar,keep,twinnum,twinid,status)
+  mydata <- cbind(cur,mm)
+  if (missing(DZ)) {
+    warning("Using first level, `",zyglev[1],"', in status variable as indicator for 'dizygotic'", sep="")
+    DZ <- zyglev[1]
+  }
+  myDZ <- which(levels(zygstat)==DZ)
+  myMZ <- setdiff(1:2,myDZ)
+
 
   data1 <- mydata[mydata[,status]==myMZ,,drop=FALSE]
   data2 <- mydata[mydata[,status]==myDZ,,drop=FALSE]
@@ -149,9 +154,10 @@ twinlm <- function(formula, data, type=c("ace"), twinid="id", status="zyg", DZ, 
     full <- list(model1,model2)
     ## #######
     type <- tolower(type)
-    isA <- length(grep("a",type))>0
-    isC <- length(grep("c",type))>0
-    isD <- length(grep("d",type))>0
+  isA <- length(grep("a",type))>0
+  isC <- length(grep("c",type))>0
+  isD <- length(grep("d",type))>0
+  isE <- length(grep("e",type))>0
     if (!isA) {
       kill(model1) <- ~ a1 + a2
       kill(model2) <- ~ a1 + a2
@@ -163,6 +169,10 @@ twinlm <- function(formula, data, type=c("ace"), twinid="id", status="zyg", DZ, 
     if (!isC) {
       kill(model1) <- ~ c1 + c2
       kill(model2) <- ~ c1 + c2
+    }
+    if (!isE) {
+      kill(model1) <- ~ e1 + e2
+      kill(model2) <- ~ e1 + e2
     }
 
   ## Full rank covariate/design matrix?
@@ -227,11 +237,19 @@ twinlm <- function(formula, data, type=c("ace"), twinid="id", status="zyg", DZ, 
   
   if (binary) {
     binary(model1) <- outcomes
-    regfix(model1,from=c("e1","e2"), to=outcomes) <- list(1,1) 
+    covariance(model1,outcomes) <- 0
     binary(model2) <- outcomes
-    regfix(model2,from=c("e1","e2"), to=outcomes) <- list(1,1) 
+    covariance(model2,outcomes) <- 0
+    if (!is.null(probitscale))
+      if (isE) {
+        regression(model1,from=c("e1","e2"), to=outcomes) <- rep(probitscale,2)
+        regression(model2,from=c("e1","e2"), to=outcomes) <- rep(probitscale,2) 
+      } else {
+        regression(model1,from=c("c1"), to=outcomes) <- probitscale
+        regression(model2,from=c("c1"), to=outcomes) <- probitscale 
+      }
   }
-
+##  browser()
 
 ###Estimate
   newkeep <- as.vector(sapply(keep, function(x) paste(x,1:2,sep=".")))
@@ -239,7 +257,8 @@ twinlm <- function(formula, data, type=c("ace"), twinid="id", status="zyg", DZ, 
   mg <- multigroup(list(model1,model2), list(wide1,wide2),missing=TRUE,fix=FALSE,keep=newkeep)
   if (is.null(estimator)) return(mg)
   e <- estimate(mg,weight=myweights,debug=debug,estimator=estimator,...)
-  res <- list(coefficients=e$opt$estimate, vcov=e$vcov, estimate=e, model=mg, full=full, call=cl, data=data, status=status, twinid=twinid, twinnum=twinnum, binary=binary)
+  res <- list(coefficients=e$opt$estimate, vcov=e$vcov, estimate=e, model=mg, full=full, call=cl, data=data, status=status, twinid=twinid, twinnum=twinnum, binary=binary,
+              probitscale=probitscale)
   class(res) <- "twinlm"
   return(res)
 }
@@ -279,8 +298,9 @@ summary.twinlm <- function(object,...) {
   varcomp <- c()
   genpos <- c()
   pos <- 0
-  if ("e1"%in%latent(e) & object$binary) {    
-    varEst[4] <- 1
+  if ("e1"%in%latent(e) & object$binary) {
+    if (length(object$probitscale)>0)
+      varEst[4] <- object$probitscale
     if ("a1"%in%latent(e)) { varcomp <- "lambda[a]"; pos <- pos+1; genpos <- c(genpos,pos) }
     if ("c1"%in%latent(e)) { varcomp <- c(varcomp,"lambda[c]"); pos <- pos+1 }
     if ("d1"%in%latent(e)) { varcomp <- c(varcomp,"lambda[d]"); pos <- pos+1;
