@@ -254,7 +254,7 @@ twinlm <- function(formula, data, type=c("ace"), twinid="id", status="zyg", DZ, 
 ###Estimate
   newkeep <- as.vector(sapply(keep, function(x) paste(x,1:2,sep=".")))
 ##  return(list(model=list(model1,model2), data=list(wide1,wide2)))
-  mg <- multigroup(list(model1,model2), list(wide1,wide2),missing=TRUE,fix=FALSE,keep=newkeep)
+  suppressWarnings(mg <- multigroup(list(model1,model2), list(wide1,wide2),missing=TRUE,fix=FALSE,keep=newkeep))
   if (is.null(estimator)) return(mg)
   e <- estimate(mg,weight=myweights,debug=debug,estimator=estimator,...)
   res <- list(coefficients=e$opt$estimate, vcov=e$vcov, estimate=e, model=mg, full=full, call=cl, data=data, status=status, twinid=twinid, twinnum=twinnum, binary=binary,
