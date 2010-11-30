@@ -1,4 +1,8 @@
-lava.tobit.sim.hook <- function(x,data,...) {
+lava.tobit.init.hook <- function(x,...) {
+  nodeDataDefaults(x,"binary") <- FALSE; x
+}
+
+lava.tobit.sim.hook <- function(x,data,...) {  
   if (length(binary(x))>0)
     data[,binary(x)] <- (data[,binary(x)]>0)*1
   return(data)
@@ -22,20 +26,24 @@ lava.tobit.estimate.hook <- function(x,data,weight,estimator,...) {
       }
     }
     if (length(binary(x))>0) {
+      estimator <- "tobit"
       if (is.null(weight)) {
+        
         W <- data[,binary(x),drop=FALSE]; W[W==0] <- -1; colnames(W) <- binary(x)
         weight <- W
       } else {
-        if (!all(binary(x)%in%colnames(data))) {
-          W <- data[,binary(x),drop=FALSE]; W[W==0] <- -1; colnames(W) <- binary(x)
-          weight[,binary(x)] <- W
-        }
+##        if (!all(binary(x)%in%colnames(data)))
+##        browser()
+#        estimator <- "tobitw"
+#        W <- data[,binary(x),drop=FALSE]; W[W==0] <- -1; colnames(W) <- binary(x)
+#        attributes(W)$weight2 <- weight
+#        weight <- W
+        ##          weight[,binary(x)] <- W
       }
       for (b in binary(x)) {
         data[!is.na(data[,b]),b] <- 0
       }
       ##    data[,binary(x)] <- 0
-      estimator <- "tobit"
     }
   }
 ##  if (!is.null(weight))
@@ -74,6 +82,6 @@ lava.tobit.estimate.hook <- function(x,data,weight,estimator,...) {
         weight <- W;
       }
     }
-  }
+  }  
   return(c(list(x=x,data=data,weight=weight,estimator=estimator),dots)) 
 }

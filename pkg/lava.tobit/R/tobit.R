@@ -10,7 +10,6 @@ tobit_objective.lvm <- function(x,p,data,weight,indiv=FALSE,
     save.seed <- .Random.seed
     set.seed(seed)
   }
-##  browser()
   require("mvtnorm")
   zz <- manifest(x) 
   d <- as.matrix(rbind(data)[,zz,drop=FALSE]);
@@ -81,7 +80,6 @@ tobit_objective.lvm <- function(x,p,data,weight,indiv=FALSE,
   val
 }
 
-
 tobit_gradient.lvm <- function(x,p,data,weight,indiv=FALSE,
                                algorithm=lava.options()$tobitAlgorithm,
                                seed=lava.options()$tobitseed,...) {
@@ -99,6 +97,14 @@ tobit_gradient.lvm <- function(x,p,data,weight,indiv=FALSE,
   yy.idx <- match(yy.w,zz)
   Status <- matrix(0,ncol=length(zz),nrow=nrow(d))
   Status[,yy.idx]<- as.matrix(weight)[,yy.w,drop=FALSE]
+  W0 <- W <- attributes(weight)$weight2
+  if (!is.null(W)) {
+    yy.w2 <- intersect(yy,colnames(W))
+    yy.idx2 <- match(yy.w2,zz)
+    W0 <- matrix(1,ncol=length(zz),nrow=nrow(d))
+    W0[,yy.idx2] <- W[,yy.w2,drop=FALSE]
+    colnames(W0) <- zz
+  }
 ##  yy <- endogenous(x)
 ##  yy.idx <- match(yy,zz)
 ##  Status <- matrix(0,ncol=length(zz),nrow=nrow(d))
@@ -123,9 +129,9 @@ tobit_gradient.lvm <- function(x,p,data,weight,indiv=FALSE,
     left.cens.y <- zz[left.cens.idx]
     right.cens.y <- zz[right.cens.idx] ##setdiff(zz,noncens.y)
     y <- d[idx,,drop=FALSE]
-    ##    browser()
-    
-    dummy <- cens.score(x,p,data=y,cens.idx=cens.idx,cens.which.left=cens.which.left, algorithm=algorithm)
+    w <- W0[idx,]
+    ##    browser()    
+    dummy <- cens.score(x,p,data=y,cens.idx=cens.idx,cens.which.left=cens.which.left, algorithm=algorithm,weight=w)
     score[idx,] <- dummy
     
     ##    browser()
@@ -155,8 +161,8 @@ tobit_gradient.lvm <- function(x,p,data,weight,indiv=FALSE,
 }
 
 
-tobit_hessian.lvm <- function(p,model,data,weight,...) {
-  S <- -tobit_gradient.lvm(model,p=p,data=data,weight=weight,indiv=TRUE,...)
+tobit_hessian.lvm <- function(x,p,data,weight,...) {
+  S <- -tobit_gradient.lvm(x,p=p,data=data,weight=weight,indiv=TRUE,...)
   J <- t(S)%*%S
   attributes(J)$grad <- colSums(S)
   return(J)  
@@ -179,7 +185,7 @@ tobit_logLik.lvm <- function(object,p,data,weight,...) {
 
 ###{{{ score for fixed censoring pattern
 
-cens.score <- function(x,p,data,cens.idx,cens.which.left,...) {
+cens.score <- function(x,p,data,cens.idx,cens.which.left,weight,...) {
   obs.idx <- setdiff(1:NCOL(data),cens.idx)
   n <- NROW(data)
 ##  print(system.time(
@@ -212,6 +218,7 @@ cens.score <- function(x,p,data,cens.idx,cens.which.left,...) {
       S <- L%*%S%*%L
       dS <- (L%x%L)%*%dS
     }
+    w <- NULL
     for (i in 1:n) {
       mu <- M$mu.censIobs[i,]
       dmu <- matrix(M$dmu.censIobs[,,i],nrow=length(cens.idx))
@@ -220,6 +227,8 @@ cens.score <- function(x,p,data,cens.idx,cens.which.left,...) {
         dmu <- L%*%dmu
       }
       zi <- z[i,]
+      if (!is.null(weight))
+        w <- diag(weight[i,cens.idx],nrow=length(cens.idx))
       if (combcens==-1) {
         zi <- -zi
         mu <- -mu
@@ -235,7 +244,8 @@ cens.score <- function(x,p,data,cens.idx,cens.which.left,...) {
                             dS=dS,
                             ##                            dmu=L%*%matrix(M$dmu.censIobs[,,i],nrow=length(cens.idx)),
                             dmu=dmu,
-                            ...)                        
+                            weight=w,
+                            ...)
       alpha <- attributes(DCDF)$cdf
       DCDFs <- rbind(DCDFs, 1/alpha*DCDF)
     }
@@ -256,13 +266,21 @@ cens.score <- function(x,p,data,cens.idx,cens.which.left,...) {
     dS <- M$dS.obs
     dmu <- M$dmu.obs
     S1 <- c()
-    part0 <- -1/2*as.vector(iS)%*%dS
+    part0 <- -1/2*as.vector(iS)%*%dS    
     for (i in 1:n) {
       z <- as.numeric(y1[i,])
       u <- z-mu
-      S1 <- rbind(S1,
-                  as.numeric(part0 + crossprod(u,iS)%*%dmu +
-                             1/2*as.vector(iS%*%tcrossprod(u)%*%iS)%*%dS))
+##      browser()
+      if (!is.null(weight)) {
+        W <- diag(weight[i,obs.idx],nrow=length(obs.idx))
+        S1 <- rbind(S1,
+                    as.numeric(crossprod(W%*%u,iS)%*%dmu -
+                               1/2*as.vector((iS-iS%*%tcrossprod(u)%*%iS)%*%W)%*%dS))
+      } else {      
+        S1 <- rbind(S1,
+                    as.numeric(part0 + crossprod(u,iS)%*%dmu +
+                               1/2*as.vector(iS%*%tcrossprod(u)%*%iS)%*%dS))
+      }
     }
   } else S1 <- 0
 ##   cat(rep("*",50),sep="")
@@ -339,7 +357,7 @@ Dpmvnorm <- function(Y,S,mu=rep(0,NROW(S)),std=FALSE,seed=lava.options()$tobitse
   }
   if (!std) {
     if (!is.null(seed))
-      set.seed(save.seed)
+      .Random.seed <<- save.seed
     a <- pmvnorm(upper=Y,mean=as.numeric(mu),sigma=S,algorithm=algorithm)
     return(list(grad=Li%*%D, hessian=Li%*%H%*%Li, R=S, CDF=a, S=S0, mu=mu, L=L, Li=Li))
   }
@@ -351,7 +369,7 @@ Dpmvnorm <- function(Y,S,mu=rep(0,NROW(S)),std=FALSE,seed=lava.options()$tobitse
 ## Calculates first and second order partial derivatives of normal CDF
 ## w.r.t. parameter-vector!
 Dthetapmvnorm <- function(yy,mu,S,dmu,dS,seed=lava.options()$tobitseed,
-                          algorithm=lava.options()$tobitAlgorithm,
+                          algorithm=lava.options()$tobitAlgorithm, weight,
                           ...) {
   if (!is.null(seed)) {
     if (!exists(".Random.seed")) runif(1)
@@ -369,9 +387,17 @@ Dthetapmvnorm <- function(yy,mu,S,dmu,dS,seed=lava.options()$tobitseed,
   L <- diag(L,NROW(S))
   R <- Li%*%S%*%Li
   LR <- L%*%R ## = S%*%Li
-  K1 <- -0.5*t(dS)%*%cbind(as.vector(iS))
-  K2 <- 0.5*t(dS)%*%(iS%x%iS)
-  K3 <- t(dmu)%*%(iS)
+  ##  browser()
+  if (!is.null(weight)) {
+    K1 <- -0.5*t(dS)%*%cbind(as.vector(iS%*%weight))
+    K2 <- 0.5*t(dS)%*%(iS%x%iS)
+    K3 <- t(dmu)%*%(iS%*%weight)
+  } else {
+    K1 <- -0.5*t(dS)%*%cbind(as.vector(iS))
+    K2 <- 0.5*t(dS)%*%(iS%x%iS)
+    K3 <- t(dmu)%*%(iS)
+  }
+
   S0 <- function(y) {
     z <- Li%*%(y-mu)
 #    set.seed(seed)
@@ -380,6 +406,9 @@ Dthetapmvnorm <- function(yy,mu,S,dmu,dS,seed=lava.options()$tobitseed,
     MM <- -LR%*%(DC$grad)
     VV <- LR%*%(DC$hessian)%*%t(LR) + a*S    
     part1 <- K1*a
+    if (!is.null(weight)) {
+      VV <- VV%*%weight
+    }
     part2 <- K2%*%as.vector(VV)
     part3 <- K3%*%as.vector(MM)
     res <- part1+part2+part3

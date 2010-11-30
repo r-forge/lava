@@ -31,7 +31,7 @@ clprobit <- function(x,data,k=2,type=c("nearest","all"),pairlist,silent=TRUE,
   iI <- vcov(e0); J <- t(Siid)%*%(Siid)
   e0$iidscore <- Siid
   e0$blocks <- blocks
-  e0$vcov <- iI%*%J%*%iI
+  e0$vcov <- iI%*%J%*%iI ## thetahat-theta0 :=(asymp) I^-1*S => var(thetahat) = iI*var(S)*iI 
   cc <- e0$coef; cc[,2] <- sqrt(diag(e0$vcov))
   cc[,3] <- cc[,1]/cc[,2]; cc[,4] <- 2*(1-pnorm(cc[,3]))
   e0$coef <- cc

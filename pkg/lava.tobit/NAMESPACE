@@ -9,6 +9,7 @@ export(
        tobit_hessian.lvm,
        tobit_logLik.lvm,
        clprobit,
+       lava.tobit.init.hook,
        lava.tobit.estimate.hook,
        lava.tobit.color.hook,
        lava.tobit.sim.hook

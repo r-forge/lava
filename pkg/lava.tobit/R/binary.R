@@ -11,11 +11,11 @@
 `binary.lvm` <-
 function(x,var=NULL, ...) {
   if (is.null(var)) {
-    binidx <- unlist(nodeData(Graph(x), attr="binary"))
+    binidx <- tryCatch(unlist(nodeData(Graph(x), attr="binary")),error=function(e) NULL)
     if (length(binidx)>0)
       return(names(binidx)[binidx])
     else
-      NULL    
+      return(NULL)
   }
   x <- addattr(x,attr="shape",var=var,val="box")
   nodeData(Graph(x), var, attr="binary") <- TRUE
@@ -24,3 +24,4 @@ function(x,var=NULL, ...) {
   ##  distribution(x, var) <- probit.lvm
   return(x)
 }
+
