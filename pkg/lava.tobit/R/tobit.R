@@ -80,7 +80,11 @@ tobit_objective.lvm <- function(x,p,data,weight,indiv=FALSE,
   val
 }
 
-tobit_gradient.lvm <- function(x,p,data,weight,indiv=FALSE,
+###}}} Objective
+
+###{{{ Gradient & Hessian
+
+tobit_gradient.lvm <- function(x,p,data,weight,weight2=NULL,indiv=FALSE,
                                algorithm=lava.options()$tobitAlgorithm,
                                seed=lava.options()$tobitseed,...) {
 
@@ -97,12 +101,13 @@ tobit_gradient.lvm <- function(x,p,data,weight,indiv=FALSE,
   yy.idx <- match(yy.w,zz)
   Status <- matrix(0,ncol=length(zz),nrow=nrow(d))
   Status[,yy.idx]<- as.matrix(weight)[,yy.w,drop=FALSE]
-  W0 <- W <- attributes(weight)$weight2
-  if (!is.null(W)) {
-    yy.w2 <- intersect(yy,colnames(W))
+
+  W0 <- weight2
+  if (!is.null(W0)) {
+    yy.w2 <- intersect(yy,colnames(weight2))
     yy.idx2 <- match(yy.w2,zz)
     W0 <- matrix(1,ncol=length(zz),nrow=nrow(d))
-    W0[,yy.idx2] <- W[,yy.w2,drop=FALSE]
+    W0[,yy.idx2] <- weight2[,yy.w2,drop=FALSE]
     colnames(W0) <- zz
   }
 ##  yy <- endogenous(x)
@@ -129,13 +134,10 @@ tobit_gradient.lvm <- function(x,p,data,weight,indiv=FALSE,
     left.cens.y <- zz[left.cens.idx]
     right.cens.y <- zz[right.cens.idx] ##setdiff(zz,noncens.y)
     y <- d[idx,,drop=FALSE]
-    w <- W0[idx,]
-    ##    browser()    
+    w <- W0[idx,,drop=FALSE]
     dummy <- cens.score(x,p,data=y,cens.idx=cens.idx,cens.which.left=cens.which.left, algorithm=algorithm,weight=w)
-    score[idx,] <- dummy
-    
+    score[idx,] <- dummy   
     ##    browser()
-
     ##    y.pat <- unique(y,MARGIN=1)
     ##    system.time(
     ##    y.type <- apply(y,1,
@@ -145,8 +147,7 @@ tobit_gradient.lvm <- function(x,p,data,weight,indiv=FALSE,
     ##    print(system.time(
     ##                      dummy <- cens.score(x,p,data=y.pat,cens.idx=cens.idx, cens.which.left=cens.which.left, algorithm=algorithm)
     ##                      ))
-    ##    score <- rbind(score,dummy[y.type,,drop=FALSE])
-    
+    ##    score <- rbind(score,dummy[y.type,,drop=FALSE]) 
     ##    score <- rbind(0)
     ##    browser()
     ##    dummy <- cens.score(x,p,data=y,cens.idx=cens.idx, cens.which.left=cens.which.left)
@@ -160,7 +161,6 @@ tobit_gradient.lvm <- function(x,p,data,weight,indiv=FALSE,
   return(-colSums(score))
 }
 
-
 tobit_hessian.lvm <- function(x,p,data,weight,...) {
   S <- -tobit_gradient.lvm(x,p=p,data=data,weight=weight,indiv=TRUE,...)
   J <- t(S)%*%S
@@ -168,7 +168,22 @@ tobit_hessian.lvm <- function(x,p,data,weight,...) {
   return(J)  
 }
 
-###}}} Objective function
+tobit_hessian.lvm <- function(p,...) {
+  ##  browser()
+  S <- tobit_gradient.lvm(p=p,...)
+  ## S1 <- -tobit_gradient.lvm(p=p,indiv=TRUE,...)
+  ##  J <- t(S1)%*%S1  
+  myfun <- function(p0) tobit_gradient.lvm(p=p0,...)
+  H <- jacobian(myfun,p,method=lava.options()$Dmethod)
+  ##  H2 <- jacobian(myfun,p)
+  ##  E <- eigen(H); E$values[E$values<0] <- 0.1
+  ##  H <- with(E,vectors%*%diag(values)%*%t(vectors))
+  attributes(H)$grad <- S
+  H
+}
+
+
+###}}} Gradient & hessian
 
 ###{{{ Log-likelihood
 
@@ -387,8 +402,7 @@ Dthetapmvnorm <- function(yy,mu,S,dmu,dS,seed=lava.options()$tobitseed,
   L <- diag(L,NROW(S))
   R <- Li%*%S%*%Li
   LR <- L%*%R ## = S%*%Li
-  ##  browser()
-  if (!is.null(weight)) {
+  if (!is.null(weight)) {    
     K1 <- -0.5*t(dS)%*%cbind(as.vector(iS%*%weight))
     K2 <- 0.5*t(dS)%*%(iS%x%iS)
     K3 <- t(dmu)%*%(iS%*%weight)

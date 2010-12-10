@@ -12,7 +12,7 @@ lava.tobit.color.hook <- function(x,subset=vars(x),...) {
   return(list(vars=intersect(subset,binary(x)),col="indianred1"))
 }
 
-lava.tobit.estimate.hook <- function(x,data,weight,estimator,...) {
+lava.tobit.estimate.hook <- function(x,data,weight,weight2,estimator,...) {
   dots <- list(...) 
 ## Binary outcomes -> censored regression  
   if (estimator%in%c("gaussian","tobit")) {
@@ -27,23 +27,23 @@ lava.tobit.estimate.hook <- function(x,data,weight,estimator,...) {
     }
     if (length(binary(x))>0) {
       estimator <- "tobit"
-      if (is.null(weight)) {
-        
+      if (is.null(weight)) {        
         W <- data[,binary(x),drop=FALSE]; W[W==0] <- -1; colnames(W) <- binary(x)
         weight <- W
       } else {
-##        if (!all(binary(x)%in%colnames(data)))
-##        browser()
-#        estimator <- "tobitw"
-#        W <- data[,binary(x),drop=FALSE]; W[W==0] <- -1; colnames(W) <- binary(x)
-#        attributes(W)$weight2 <- weight
-#        weight <- W
+        ##        if (!all(binary(x)%in%colnames(data)))
+        ##        W <- data[,binary(x),drop=FALSE]; W[W==0] <- -1; colnames(W) <- binary(x)
+        ##        attributes(W)$weight2 <- weight
+        ##        weight <- W
         ##          weight[,binary(x)] <- W
       }
       for (b in binary(x)) {
         data[!is.na(data[,b]),b] <- 0
       }
       ##    data[,binary(x)] <- 0
+      if (!is.null(weight2)) {
+        estimator <- "tobitw"
+      }
     }
   }
 ##  if (!is.null(weight))
@@ -51,7 +51,7 @@ lava.tobit.estimate.hook <- function(x,data,weight,estimator,...) {
 
 ## Transform 'Surv' objects
   W <- mynames <- c()
-  if (estimator%in%c("gaussian","tobit")) {
+  if (estimator%in%c("gaussian","tobit","tobitw")) {
     for (i in setdiff(endogenous(x),binary(x))) {
       if (is.Surv(data[,i])) { 
         estimator <- "tobit"
