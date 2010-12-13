@@ -38,12 +38,11 @@ twinlm <- function(formula, data, type=c("ace"), twinid="id", status="zyg", DZ, 
   ## Get data on wide format and divide into two groups by zygosity
   if (!twinnum%in%names(data)) {
     mynum <- rep(1,nrow(data))
-    mynum[duplicated(data[zygstat==zyglev[1],twinid])] <- 2
-    mynum[duplicated(data[zygstat==zyglev[2],twinid])] <- 2
+    mynum[zygstat==zyglev[1]][duplicated(data[zygstat==zyglev[1],twinid])] <- 2
+    mynum[zygstat==zyglev[2]][duplicated(data[zygstat==zyglev[2],twinid])] <- 2
     data[,twinnum] <- mynum
   }
-  zz <- subset(data, twinnum==1 & zyg==2)
-
+  
   cur <- cbind(data[,c(yvar,keep)],as.numeric(data[,twinnum]),as.numeric(data[,twinid]),as.numeric(zygstat));
   colnames(cur) <- c(yvar,keep,twinnum,twinid,status)
   mydata <- cbind(cur,mm)
@@ -194,6 +193,7 @@ twinlm <- function(formula, data, type=c("ace"), twinid="id", status="zyg", DZ, 
     ## wide1[which(is.na(wide1[,outcomes[2]])),c(outcomes[2],weight[2])] <- 0
     ## wide2[which(is.na(wide2[,outcomes[1]])),c(outcomes[1],weight[1])] <- 0
     ## wide2[which(is.na(wide2[,outcomes[2]])),c(outcomes[2],weight[2])] <- 0
+    if (!binary) estimator <- "weighted"
   }
 
   if (binary) {
@@ -211,7 +211,6 @@ twinlm <- function(formula, data, type=c("ace"), twinid="id", status="zyg", DZ, 
       }
   }
 
-  ##  browser()
   ## Estimate
   newkeep <- unlist(sapply(keep, function(x) paste(x,1:2,sep=".")))
   suppressWarnings(mg <- multigroup(list(model1,model2), list(wide1,wide2), missing=TRUE,fix=FALSE,keep=newkeep))
@@ -248,35 +247,51 @@ summary.twinlm <- function(object,...) {
   myest <- cbind(theta,theta.sd,(Z <- theta/theta.sd),2*(1-pnorm(abs(Z))))
   colnames(myest) <- c("Estimate","Std. Error", "Z value", "Pr(>|z|)")
   if (length(grep("u",object$type))>0) {
-    cc <- coef(e)    
-    pp <- modelPar(e$model,seq_len(nrow(myest)))$p
-    nn <- gsub(".1","",coef(e$model$lvm[[1]]),fixed=TRUE)
-    u.idx <- c(grep("<-u",nn),nrow(myest))
-    nn <- c(nn,""); nn[u.idx] <- c("DZ:sd(u)","MZ:sd(u)")
+    cc <- coef(e)
+    pi <- seq_len(nrow(myest))
+    pp <- modelPar(e$model,pi)$p
+    nn <- rep(NA,nrow(myest))
+    nn[pp[[1]]] <- coef(e$model$lvm[[1]])
+    nn.na <- which(is.na(nn))
+    i2 <- 0
+    for (i in 1:length(pp)) {
+      if (nn.na%in%pp[[i]]) {
+        i2 <- i
+        break;
+      }      
+    }
+    pp.i2 <- which(pp[[i2]]==nn.na)
+    parnum <- pp[[i2]][pp.i2]
+    nn[nn.na] <- coef(e$model$lvm[[i2]])[pp.i2]
+    nn <- gsub(".1","",nn,fixed=TRUE)
+    nn <- gsub(".2","",nn,fixed=TRUE)
+    u.idx <- c(grep("<-u",nn))
+    lastpos <- all(parnum>=u.idx) ## i2-coef positioined after coef. of model 1
+    if ((lastpos & "sdu1"%in%parlabels(e$model$lvm[[i2]]))
+        |
+        (!lastpos & "sdu2"%in%parlabels(e$model$lvm[[i2]]))
+        ) u.idx <- rev(u.idx)
+
+    nn <- c(nn); nn[u.idx] <- c("MZ:sd(u)","DZ:sd(u)")
     rownames(myest) <- nn
     neword <- c(setdiff(seq_len(nrow(myest)),u.idx),u.idx)
     ##L <- binomial("logit")
-    ##constrain(e, gh~sdu1+sdu2) <- function(x) 2*(diff(x))                                           #3  }
-    ##  ci.logit <- L$linkinv(constraints(e)["h2",5:6])
     logit <- function(p) log(p/(1-p))
     tigol <- function(z) 1/(1+exp(-z))
-    h <- function(x) 2*((x[2]^2)/(x[2]^2+1)-(x[1]^2)/(x[1]^2+1))
+    h <- function(x) 2*((x[1]^2)/(x[1]^2+1)-(x[2]^2)/(x[2]^2+1))
     dh <- function(x) {
       x2 <- x^2; sx <- x2+1
-      c(-1,1)*2*(2*x*sx-x2*2*x)/sx^2
+      c(1,-1)*2*(2*x*sx-x2*2*x)/sx^2
     }
     dlogit <- function(p) 1/(p^2-p)
     logith <- function(x) logit(h(x))
     dlogith <- function(x) dlogit(h(x))*dh(x)
-    ##x <- c(a=0.5,c=2,d=0,e=1)
-    ##dlogith(x)
     V <- e$vcov[u.idx,u.idx]
     b <- pars(e)[u.idx]
     Db <- dlogith(b)
     sd. <- t(Db)%*%V%*%Db
     hval <- c(h(b),NA)
-##    hci <- hval[1]+c(-1,1)*qnorm(0.975)*hval[2];
-    hci <- tigol(hval[1]+qnorm(0.975)*c(-1,1)*sd.)
+    hci <- tigol(hval[1]+qnorm(0.975)*c(1,-1)*sd.)
     names(hci) <- c("2.5%","97.5%")
     res <- list(estimate=myest[neword,], zyg=zygtab,
                 varEst=NULL, varSigma=NULL, heritability=hval, hci=hci,
@@ -284,10 +299,11 @@ summary.twinlm <- function(object,...) {
     class(res) <- "summary.twinlm"
     return(res)
   }
-  
+
   rownames(myest) <- gsub(".1","",coef(Model(Model(e))[[1]],
-                                      mean=e$meanstructure, silent=TRUE),
+                                       mean=e$meanstructure, silent=TRUE),
                           fixed=TRUE)
+  rownames(myest) <- gsub(".2","",rownames(myest),fixed=TRUE)
 ##  rownames(myest) <- coef(Model(Model(e))[[1]],
 ##                                      mean=e$meanstructure, silent=TRUE)
                      
@@ -550,6 +566,7 @@ twinsim <- function(n=100,k1=c(),k2=1,mu=0,lambda=c(1,1,1),randomslope=NULL,type
       regfix(sim.model1,from=covars2[i],to=outcomes[2],silent=TRUE) <- k2[i]
     }
   }
+  intercept(sim.model1, latent(sim.model1)) <- 0
   
   sim.model2 <- model2
   intfix(sim.model2,outcomes) <- mu
@@ -577,7 +594,7 @@ twinsim <- function(n=100,k1=c(),k2=1,mu=0,lambda=c(1,1,1),randomslope=NULL,type
     binary(sim.model1) <- outcomes
     binary(sim.model2) <- outcomes
   }
-  
+
   d1 <- sim(sim.model1,n=n,...)
   d2 <- sim(sim.model2,n=n,...)
 

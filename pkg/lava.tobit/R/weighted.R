@@ -14,6 +14,19 @@ atobitw_gradient.lvm <- function(p,...) {
   2*S%*%H
 }
 
+## tobitw_method.lvm <- "estfun"
+## tobitw_objective.lvm <- function(...) {
+##   S <- tobit_gradient.lvm(...)
+##   crossprod(S)[1]
+## }
+## tobitw_gradient.lvm <- function(p,...) {
+##   myfun <- function(p0) tobit_gradient.lvm(p=p0,...)
+##   H <- jacobian(myfun,p,method=lava.options()$Dmethod)
+##   S <- myfun(p)
+##   2*S%*%H
+## }
+##obitw_hessian.lvm <- NULL
+
 tobitw2_method.lvm <- "NR"
 tobitw2_objective.lvm <- function(...) {
   S <- tobit_gradient.lvm(...)
@@ -30,4 +43,3 @@ tobitw2_hessian.lvm <- function(p,...) {
   H
 }
 
-p <- c(-0.0611481, -7.23247e-05, 0.532474, 0.000121360)
