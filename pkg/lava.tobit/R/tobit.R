@@ -105,7 +105,7 @@ tobit_gradient.lvm <- function(x,p,data,weight,weight2=NULL,indiv=FALSE,
   W0 <- weight2
   if (!is.null(W0)) {
     yy.w2 <- intersect(yy,colnames(weight2))
-    yy.idx2 <- match(yy.w2,zz)
+    yy.idx2 <- match(yy.w2,zz)    
     W0 <- matrix(1,ncol=length(zz),nrow=nrow(d))
     W0[,yy.idx2] <- weight2[,yy.w2,drop=FALSE]
     colnames(W0) <- zz
