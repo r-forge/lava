@@ -156,6 +156,10 @@ twinlm <- function(formula, data, type=c("ace"), twinid="id", status="zyg", DZ, 
     kill(model1) <- ~ u##+sdu2
     kill(model2) <- ~ u##+sdu1
   }
+  if (isU & isE) {
+    regression(model1,outcomes[1],"e1") <- "lambda[e2]"
+    regression(model1,outcomes[2],"e2") <- "lambda[e2]"
+  }
 
   ## Full rank covariate/design matrix?
   for (i in covars) {
@@ -203,9 +207,12 @@ twinlm <- function(formula, data, type=c("ace"), twinid="id", status="zyg", DZ, 
     covariance(model2,outcomes) <- 0
     if (!is.null(probitscale))
       if (isE) {
-        regression(model1,from=c("e1","e2"), to=outcomes) <- rep(probitscale,2)
-        regression(model2,from=c("e1","e2"), to=outcomes) <- rep(probitscale,2) 
-      } else {
+        regression(model2,from=c("e1","e2"), to=outcomes) <-
+          rep(probitscale,2)
+        if (!isU)
+          regression(model1,from=c("e1","e2"), to=outcomes) <-
+            rep(probitscale,2) 
+      } else { ## Testing:
         regression(model1,from=c("c1"), to=outcomes) <- probitscale
         regression(model2,from=c("c1"), to=outcomes) <- probitscale 
       }
@@ -220,7 +227,7 @@ twinlm <- function(formula, data, type=c("ace"), twinid="id", status="zyg", DZ, 
   } else {
     e <- estimate(mg,weight=weight,debug=debug,estimator=estimator,fix=FALSE,...)
   }
-  res <- list(coefficients=e$opt$estimate, vcov=e$vcov, estimate=e, model=mg, full=full, call=cl, data=data, status=status, twinid=twinid, twinnum=twinnum, binary=binary, type=type,
+  res <- list(coefficients=e$opt$estimate, vcov=e$vcov, estimate=e, model=mg, full=full, call=cl, data=data, status=status, twinid=twinid, twinnum=twinnum, binary=binary, type=type, model.mz=model1, model.dz=model2, data.mz=wide1, data.dz=wide2,
               probitscale=probitscale)
   class(res) <- "twinlm"
   return(res)
@@ -246,7 +253,9 @@ summary.twinlm <- function(object,...) {
   theta.sd <- sqrt(diag(e$vcov))
   myest <- cbind(theta,theta.sd,(Z <- theta/theta.sd),2*(1-pnorm(abs(Z))))
   colnames(myest) <- c("Estimate","Std. Error", "Z value", "Pr(>|z|)")
+  
   if (length(grep("u",object$type))>0) {
+
     cc <- coef(e)
     pi <- seq_len(nrow(myest))
     pp <- modelPar(e$model,pi)$p
@@ -255,47 +264,80 @@ summary.twinlm <- function(object,...) {
     nn.na <- which(is.na(nn))
     i2 <- 0
     for (i in 1:length(pp)) {
-      if (nn.na%in%pp[[i]]) {
+      if (nn.na[1]%in%pp[[i]]) {
         i2 <- i
         break;
       }      
     }
-    pp.i2 <- which(pp[[i2]]==nn.na)
+    pp.i2 <- which(pp[[i2]]%in%nn.na)
     parnum <- pp[[i2]][pp.i2]
     nn[nn.na] <- coef(e$model$lvm[[i2]])[pp.i2]
     nn <- gsub(".1","",nn,fixed=TRUE)
     nn <- gsub(".2","",nn,fixed=TRUE)
     u.idx <- c(grep("<-u",nn))
-    lastpos <- all(parnum>=u.idx) ## i2-coef positioined after coef. of model 1
-    if ((lastpos & "sdu1"%in%parlabels(e$model$lvm[[i2]]))
-        |
-        (!lastpos & "sdu2"%in%parlabels(e$model$lvm[[i2]]))
-        ) u.idx <- rev(u.idx)
+    e.idx <- c(grep("<-e",nn))
 
-    nn <- c(nn); nn[u.idx] <- c("MZ:sd(u)","DZ:sd(u)")
+    lastpos <- all(parnum>=u.idx) ## i2-coef positioined after coef. of model 1
+    isMZ <- "sdu1"%in%parlabels(e$model$lvm[[i2]])
+    if ((lastpos & isMZ)|(!lastpos & !isMZ)) {
+      u.idx <- rev(u.idx); e.idx <- rev(e.idx)
+    }
+    nn <- c(nn); nn[u.idx] <- c("MZ:sd(U)","DZ:sd(U)")
+    if (length(e.idx)==1) {
+      nn[e.idx] <- "MZ:sd(E)"
+    } else {
+      nn[e.idx] <- c("MZ:sd(E)","DZ:sd(E)")
+    }    
     rownames(myest) <- nn
-    neword <- c(setdiff(seq_len(nrow(myest)),u.idx),u.idx)
+    neword <- c(setdiff(seq_len(nrow(myest)),c(e.idx,u.idx)),e.idx,u.idx)
+    
+    MZest <- myest[-match("DZ:sd(U)",rownames(myest)),1]
+    DZest <- myest[-match(c("MZ:sd(E)","MZ:sd(U)"),rownames(myest)),1]
+    M1 <- moments(object$model.mz,MZest,cond=FALSE)
+    M2 <- moments(object$model.dz,DZest,cond=FALSE)
+    MZcc <- with(M1, pmvnorm(lower=c(0,0),upper=c(Inf,Inf),mean=xi[,1],sigma=C))
+    DZcc <- with(M2, pmvnorm(lower=c(0,0),upper=c(Inf,Inf),mean=xi[,1],sigma=C))
+    
+    K <- ifelse (object$binary,object$probitscale,0)
     ##L <- binomial("logit")
     logit <- function(p) log(p/(1-p))
     tigol <- function(z) 1/(1+exp(-z))
-    h <- function(x) 2*((x[1]^2)/(x[1]^2+1)-(x[2]^2)/(x[2]^2+1))
-    dh <- function(x) {
-      x2 <- x^2; sx <- x2+1
-      c(1,-1)*2*(2*x*sx-x2*2*x)/sx^2
+    if (length(e.idx)==1) {
+      corDZ <- function(x) (x[2]^2)/(x[2]^2+K)
+      corMZ <- function(x) (x[1]^2)/(x[1]^2+x[3]^2)
+    } else {
+      corDZ <- function(x) (x[2]^2)/(x[2]^2+x[4]^2)
+      corMZ <- function(x) (x[1]^2)/(x[1]^2+x[3]^2)
     }
-    dlogit <- function(p) 1/(p^2-p)
+    h <- function(x) 2*(corMZ(x)-corDZ(x))
+    
+    dh <- function(x) {
+      x2 <- x^2;
+      s2 <- ifelse(length(e.idx)==1,x2[2]+K^2,x2[2]+x2[4])
+      s1 <- ifelse(length(e.idx)==1,x2[1]+x2[3],x2[1]+x2[3])
+      if (length(e.idx)==1) {
+        De <- -4*x[3]*x2[1]/s1^2
+      } else {
+        De <- c(-4*x[3]*x2[1]/s1^2,4*x[4]*x2[2]/s2^2)
+      }      
+      c(2*c(1/s1^2,-1/s2^2)*(2*x[1:2]*c(s1,s2)-x2[1:2]*2*x[1:2]),De)      
+    }
+    
+    dlogit <- function(p) 1/(p*(1-p))
     logith <- function(x) logit(h(x))
     dlogith <- function(x) dlogit(h(x))*dh(x)
-    V <- e$vcov[u.idx,u.idx]
-    b <- pars(e)[u.idx]
+
+    V <- e$vcov[c(u.idx,e.idx),c(u.idx,e.idx)]
+    b <- pars(e)[c(u.idx,e.idx)]
     Db <- dlogith(b)
     sd. <- t(Db)%*%V%*%Db
     hval <- c(h(b),NA)
-    hci <- tigol(hval[1]+qnorm(0.975)*c(1,-1)*sd.)
+    hci <- tigol(logith(b)+qnorm(0.975)*c(-1,1)*sd.)
     names(hci) <- c("2.5%","97.5%")
     res <- list(estimate=myest[neword,], zyg=zygtab,
                 varEst=NULL, varSigma=NULL, heritability=hval, hci=hci,
-                corMZ=NULL, corDZ=NULL)    
+                corMZ=corMZ(b), corDZ=corDZ(b),
+                concMZ=MZcc, concDZ=DZcc)                
     class(res) <- "summary.twinlm"
     return(res)
   }
@@ -401,7 +443,13 @@ print.summary.twinlm <- function(x,signif.stars=FALSE,...) {
   print(h)  
   cat("\n")  
   cat("Correlation within MZ:", x$corMZ, "\n")
-  cat("Correlation within DZ:", x$corDZ, "\n") 
+  cat("Correlation within DZ:", x$corDZ, "\n")
+  cat("\n")
+  if (!is.null(x$concMZ)) {
+    cat("Concordance MZ:", x$concMZ, "\n")
+    cat("Concordance DZ:", x$concDZ, "\n")
+    cat("\n")
+  }  
 }
 
 ###}}} print.summary.twinlm
