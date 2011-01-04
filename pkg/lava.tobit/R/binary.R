@@ -17,6 +17,10 @@ function(x,var=NULL, ...) {
     else
       return(NULL)
   }
+  if (is.null(nodeDataDefaults(Graph(x))$binary)) {
+    nodeDataDefaults(Graph(x),"binary") <- FALSE
+  } 
+  
   x <- addattr(x,attr="shape",var=var,val="box")
   nodeData(Graph(x), var, attr="binary") <- TRUE
   nodeData(Graph(x), var, attr="normal") <- FALSE
