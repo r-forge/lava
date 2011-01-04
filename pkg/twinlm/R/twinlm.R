@@ -222,6 +222,7 @@ twinlm <- function(formula, data, type=c("ace"), twinid="id", status="zyg", DZ, 
   newkeep <- unlist(sapply(keep, function(x) paste(x,1:2,sep=".")))
   suppressWarnings(mg <- multigroup(list(model1,model2), list(wide1,wide2), missing=TRUE,fix=FALSE,keep=newkeep))
   if (is.null(estimator)) return(mg)
+
   if (binary) {
     e <- estimate(mg,weight2=weight,debug=debug,estimator=estimator,fix=FALSE,...)
   } else {

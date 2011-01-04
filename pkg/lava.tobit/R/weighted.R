@@ -1,5 +1,6 @@
 tobitw_method.lvm <- "estfun"
 tobitw_gradient.lvm <- tobit_gradient.lvm
+tobitw_hessian.lvm <- tobit_hessian.lvm
 
 
 atobitw_method.lvm <- "nlminb1"
