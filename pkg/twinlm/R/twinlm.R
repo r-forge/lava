@@ -329,6 +329,7 @@ summary.twinlm <- function(object,...) {
       }      
       c(2*c(1/s1^2,-1/s2^2)*(2*x[1:2]*c(s1,s2)-x2[1:2]*2*x[1:2]),De)      
     }
+
     
     dlogit <- function(p) 1/(p*(1-p))
     logith <- function(x) logit(h(x))
@@ -337,8 +338,8 @@ summary.twinlm <- function(object,...) {
     V <- e$vcov[c(u.idx,e.idx),c(u.idx,e.idx)]
     b <- pars(e)[c(u.idx,e.idx)]
     Db <- dlogith(b)
-    sd. <- t(Db)%*%V%*%Db
-    hval <- c(h(b),NA)
+    sd. <- (t(Db)%*%V%*%Db)^0.5
+    hval <- c(h(b),(t(dh(b))%*%V%*%(dh(b)))^0.5)
     hci <- tigol(logith(b)+qnorm(0.975)*c(-1,1)*sd.)
     names(hci) <- c("2.5%","97.5%")
     res <- list(estimate=myest[neword,], zyg=zygtab,
@@ -378,7 +379,8 @@ summary.twinlm <- function(object,...) {
     if ("d1"%in%latent(e)) { varcomp <- c(varcomp,"lambda[d]"); pos <- pos+1;
                              genpos <- c(genpos,pos) }
     f <- paste("h2~",paste(varcomp,collapse="+"))
-    constrain(e, as.formula(f)) <- function(x) L$linkfun(sum(x[genpos])^2/sum(x^2+1))
+    constrain(e, as.formula(f)) <- function(x) L$linkfun(sum(x[genpos]^2)/sum(c(x^2,varEst[4])))
+    
   } else {
     varcomp <- c()
         if ("a1"%in%latent(e)) { varcomp <- "lambda[a]"; pos <- pos+1;
@@ -391,7 +393,7 @@ summary.twinlm <- function(object,...) {
     constrain(e, as.formula(f)) <- function(x) L$linkfun(sum(x[genpos])^2/sum(x^2))
   }
   ci.logit <- L$linkinv(constraints(e)["h2",5:6])
-  
+
   h <- function(x) (x[1]^2)/(sum(x^2))
   dh <- function(x) {
     y <- x^2
@@ -458,6 +460,7 @@ print.summary.twinlm <- function(x,signif.stars=FALSE,...) {
   cat("heritability (total genetic factors):\n")
   h <- with(x, c(heritability,hci));
   names(h) <- c("Estimate","Std.Err",names(x$hci))
+  h <- na.omit(h)
   print(h)  
   cat("\n")  
   cat("Correlation within MZ:", x$corMZ, "\n")
