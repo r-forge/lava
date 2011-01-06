@@ -291,13 +291,19 @@ summary.twinlm <- function(object,...) {
     }    
     rownames(myest) <- nn
     neword <- c(setdiff(seq_len(nrow(myest)),c(e.idx,u.idx)),e.idx,u.idx)
-    
-    MZest <- myest[-match("DZ:sd(U)",rownames(myest)),1]
-    DZest <- myest[-match(c("MZ:sd(E)","MZ:sd(U)"),rownames(myest)),1]
-    M1 <- moments(object$model.mz,MZest,cond=FALSE)
-    M2 <- moments(object$model.dz,DZest,cond=FALSE)
-    MZcc <- with(M1, pmvnorm(lower=c(0,0),upper=c(Inf,Inf),mean=xi[,1],sigma=C))
-    DZcc <- with(M2, pmvnorm(lower=c(0,0),upper=c(Inf,Inf),mean=xi[,1],sigma=C))
+
+    MZcc <- DZcc <- NULL
+    if (object$binary) {
+      MZest <- myest[-match("DZ:sd(U)",rownames(myest)),1]
+      DZest <- myest[-match(c("MZ:sd(E)","MZ:sd(U)"),rownames(myest)),1]
+      M1 <- moments(object$model.mz,MZest,cond=FALSE)
+      M2 <- moments(object$model.dz,DZest,cond=FALSE)
+      myidx <- index(object$model.mz)$endo.obsidx
+      MZcc <- with(M1, pmvnorm(lower=c(0,0),upper=c(Inf,Inf),mean=xi[myidx,1],sigma=C[myidx,myidx]))
+      myidx <- index(object$model.dz)$endo.obsidx
+      DZcc <- with(M2, pmvnorm(lower=c(0,0),upper=c(Inf,Inf),mean=xi[myidx,1],sigma=C[myidx,myidx]))
+##      browser()
+    }
     
     K <- ifelse (object$binary,object$probitscale,0)
     ##L <- binomial("logit")
@@ -412,8 +418,19 @@ summary.twinlm <- function(object,...) {
 
   corMZ <- sum(varEst[1:3]^2)/sum(varEst^2)
   corDZ <- sum(varEst[1:3]^2*c(0.5,1,0.25))/sum(varEst^2)
+
+  MZcc <- DZcc <- NULL
+  if (object$binary) {    
+    M1 <- moments(object$model.mz,coef(object),cond=FALSE)
+    M2 <- moments(object$model.dz,coef(object),cond=FALSE)
+    myidx <- index(object$model.mz)$endo.obsidx
+    MZcc <- with(M1, pmvnorm(lower=c(0,0),upper=c(Inf,Inf),mean=xi[myidx,1],sigma=C[myidx,myidx]))
+    DZcc <- with(M2, pmvnorm(lower=c(0,0),upper=c(Inf,Inf),mean=xi[myidx,1],sigma=C[myidx,myidx]))
+##    browser()
+  }
   
-  res <- list(estimate=myest, zyg=zygtab, varEst=varEst, varSigma=varSigma, hval=hval, heritability=h2val, hci=ci.logit, corMZ=corMZ, corDZ=corDZ)
+  res <- list(estimate=myest, zyg=zygtab, varEst=varEst, varSigma=varSigma, hval=hval, heritability=h2val, hci=ci.logit, corMZ=corMZ, corDZ=corDZ,
+              concMZ=MZcc, concDZ=DZcc)                              
   class(res) <- "summary.twinlm"
   return(res)
 }
