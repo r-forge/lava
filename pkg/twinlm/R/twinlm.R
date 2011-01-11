@@ -1,6 +1,6 @@
 ###{{{ twinlm
 
-twinlm <- function(formula, data, type=c("ace"), twinid="id", status="zyg", DZ, twinnum="twinnum",weight=NULL,binary=FALSE,probitscale=1,keep=weight,debug=FALSE,estimator="gaussian",...) {
+twinlm <- function(formula, data, type=c("ace"), twinid="id", status="zyg", DZ, twinnum="twinnum",weight=NULL,binary=FALSE,probitscale=1,keep=weight,estimator="gaussian",...) {
   type <- tolower(type)
   if ("u" %in% type) type <- c("ue")
   
@@ -224,9 +224,9 @@ twinlm <- function(formula, data, type=c("ace"), twinid="id", status="zyg", DZ, 
   if (is.null(estimator)) return(mg)
 
   if (binary) {
-    e <- estimate(mg,weight2=weight,debug=debug,estimator=estimator,fix=FALSE,...)
+    e <- estimate(mg,weight2=weight,estimator=estimator,fix=FALSE,...)
   } else {
-    e <- estimate(mg,weight=weight,debug=debug,estimator=estimator,fix=FALSE,...)
+    e <- estimate(mg,weight=weight,estimator=estimator,fix=FALSE,...)
   }
   res <- list(coefficients=e$opt$estimate, vcov=e$vcov, estimate=e, model=mg, full=full, call=cl, data=data, status=status, twinid=twinid, twinnum=twinnum, binary=binary, type=type, model.mz=model1, model.dz=model2, data.mz=wide1, data.dz=wide2,
               probitscale=probitscale)

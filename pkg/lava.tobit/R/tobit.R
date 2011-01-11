@@ -4,7 +4,6 @@ tobit_method.lvm <- "nlminb1"
 tobit_objective.lvm <- function(x,p,data,weight,indiv=FALSE,
                                 algorithm=lava.options()$tobitAlgorithm,
                                 seed=lava.options()$tobitseed,...) {
-
   if (!is.null(seed)) {
     if (!exists(".Random.seed")) runif(1)
     save.seed <- .Random.seed
@@ -75,6 +74,8 @@ tobit_objective.lvm <- function(x,p,data,weight,indiv=FALSE,
   }
   if (!is.null(seed))
     .Random.seed <<- save.seed
+
+  
   if (!indiv)
     return(sum(val))
   val
@@ -166,20 +167,6 @@ tobit_hessian.lvm <- function(x,p,data,weight,...) {
   J <- t(S)%*%S
   attributes(J)$grad <- colSums(S)
   return(J)  
-}
-
-tobit_hessian.lvm <- function(p,...) {
-  ##  browser()
-  S <- tobit_gradient.lvm(p=p,...)
-  ## S1 <- -tobit_gradient.lvm(p=p,indiv=TRUE,...)
-  ##  J <- t(S1)%*%S1  
-  myfun <- function(p0) tobit_gradient.lvm(p=p0,...)
-  H <- jacobian(myfun,p,method=lava.options()$Dmethod)
-  ##  H2 <- jacobian(myfun,p)
-  ##  E <- eigen(H); E$values[E$values<0] <- 0.1
-  ##  H <- with(E,vectors%*%diag(values)%*%t(vectors))
-  attributes(H)$grad <- S
-  H
 }
 
 

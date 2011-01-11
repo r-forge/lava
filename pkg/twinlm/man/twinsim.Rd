@@ -5,7 +5,7 @@
   Simulate twin data from a linear normal ACE/ADE/AE model.
 }
 \usage{
-twinsim(n=100,k1=1,k2=1,mu=10,lambda=c(1,1,1),randomslope=NULL,type="ace",...)
+twinsim(n=100,k1=c(),k2=1,mu=0,lambda=c(1,1,1),randomslope=NULL,type="ace",binary=FALSE,...)
 }
 \arguments{
 \item{n}{Number of monozygotic AND dizygotic twin-pairs to simulate
@@ -19,7 +19,8 @@ distinct covariate value for each twin/individual.}
 \item{randomslope}{Logical indicating wether to include random slopes of
 the variance components w.r.t. x1,x2,...}
 \item{type}{Type of model (subset of "acde").}
-\item{\dots}{}
+\item{binary}{If TRUE data is simulated from a probit-model (liability-model)}
+\item{\dots}{Additional arguments parsed on to lower-level functions}
 }
 \value{
 A \code{list} with the following elements
