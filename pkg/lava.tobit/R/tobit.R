@@ -22,10 +22,9 @@ tobit_objective.lvm <- function(x,p,data,weight,indiv=FALSE,
   patterns <- unique(Status,MARGIN=1)
   cens.type <- apply(Status,1,
                      function(x) which(apply(patterns,1,function(y) identical(x,y))))  
-  mp <- modelVar(x,p,data=as.data.frame(d))
+  mp <- modelVar(x,p,data=as.data.frame(d)) 
   Sigma <- mp$C ## Model specific covariance matrix
   xi <- mp$xi ## Model specific mean-vector
-  ##  val <- 0
   val <- c()
 ##  browser()
   for (i in 1:nrow(patterns)) {    
