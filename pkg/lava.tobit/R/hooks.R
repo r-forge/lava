@@ -63,8 +63,8 @@ lava.tobit.estimate.hook <- function(x,data,weight,weight2,estimator,...) {
         if (attributes(S)$type=="right") 
           w <- 1-S[,2]
         if (attributes(S)$type=="interval2") {
-        w <- S[,3]; w[w==2] <- (-1)
-      }
+          w <- S[,3]; w[w==2] <- (-1)
+        }
         mynames <- c(mynames,i)
         W <- cbind(W,w)
         data[,i] <- y
@@ -83,6 +83,6 @@ lava.tobit.estimate.hook <- function(x,data,weight,weight2,estimator,...) {
         weight <- W;
       }
     }
-  }  
+  }
   return(c(list(x=x,data=data,weight=weight,estimator=estimator),dots)) 
 }

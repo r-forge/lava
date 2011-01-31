@@ -20,17 +20,37 @@ clprobit <- function(x,data,k=2,type=c("nearest","all"),pairlist,silent=TRUE,
     mypar <- pairlist
   }  
 
-  mydata <- data[1,,drop=FALSE][-1,]
   nblocks <- ncol(mypar)
-  for (ii in 1:nblocks) {
+  mydata0 <- data[c(),,drop=FALSE]  
+  mydata <-  as.data.frame(matrix(NA, nblocks*nrow(data), ncol=ncol(data)))
+  names(mydata) <- names(mydata0)
+  for (i in 1:ncol(mydata)) {
+    if (is.factor(data[,i])) {
+      mydata[,i] <- factor(mydata[,i],levels=levels(mydata0[,i]))
+    }
+    if (is.Surv(data[,i])) {
+      S <- data[,i]
+      for (j in 2:nblocks) S <- rbind(S,data[,i])
+      S[,1] <- NA
+      mydata[,i] <- S
+    }
+  }
+  
+  for (ii in 1:nblocks) {    
     data0 <- data;
     for (i in binsurvpos[-mypar[,ii]]) {
-      data0[,i] <- NA
-      if (is.factor(data[,i])) data0[,i] <- factor(data0[,i],levels=levels(data[,i]))
-    }    
-    mydata <- rbind(mydata,data0)
+      if (is.Surv(data[,i])) {
+        S <- data0[,i]; S[,1] <- NA
+        data0[,i] <- S
+      } else {
+        data0[,i] <- NA
+        if (is.factor(data[,i])) data0[,i] <- factor(data0[,i],levels=levels(data[,i]))
+      }
+    }
+    mydata[(1:nrow(data))+(ii-1)*nrow(data),] <- data0
+##    mydata <- rbind(mydata,data0)
   }
-
+  
   suppressWarnings(e0 <- estimate(x,data=mydata,missing=TRUE,silent=silent,
               ...))
   S <- score(e0,indiv=TRUE)

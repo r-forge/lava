@@ -168,7 +168,6 @@ tobit_hessian.lvm <- function(x,p,data,weight,...) {
   return(J)  
 }
 
-
 ###}}} Gradient & hessian
 
 ###{{{ Log-likelihood
