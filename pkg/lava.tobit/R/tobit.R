@@ -396,7 +396,6 @@ Dthetapmvnorm <- function(yy,mu,S,dmu,dS,seed=lava.options()$tobitseed,
     K2 <- 0.5*t(dS)%*%(iS%x%iS)
     K3 <- t(dmu)%*%(iS)
   }
-
   S0 <- function(y) {
     z <- Li%*%(y-mu)
 #    set.seed(seed)
