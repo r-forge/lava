@@ -1,3 +1,42 @@
+###{{{ biprobit
+
+biprobit <- function(formula, data, id, zyg, twinnum, weight=NULL,
+                     control=list(trace=1), intercepts=ifelse(unique,2,1),
+                     epsilon=ifelse(unique,1,2), unique=TRUE, p,
+                     
+                   ...) {
+
+  mycall <- match.call()
+  idtab <- table(data[,id])
+  data0 <- data[as.character(data[,id])%in%names(idtab)[idtab==2],]
+  data0 <- data0[order(data0[,id]),]
+  idx1 <- as.factor(data0[,zyg])==levels(as.factor(data0[,zyg]))[1]
+  idx2 <- as.factor(data0[,zyg])==levels(as.factor(data0[,zyg]))[2]
+
+  X <- model.matrix(formula,data0)
+  nx <- ncol(X)
+  yvar <- paste(deparse(formula[[2]]),collapse="")
+  Y <- cbind(as.numeric(data0[,yvar]))-(!is.numeric(data0[,yvar]))
+  W0 <- W1 <- NULL
+  if (!is.null(weight)) {
+    W <- cbind(data0[,weight])
+    W0 <- matrix(W[idx1,],ncol=2,byrow=TRUE)
+    W1 <- matrix(W[idx2,],ncol=2,byrow=TRUE)
+  }
+  X0 <- X[idx1,,drop=FALSE]
+  X1 <- X[idx2,,drop=FALSE]
+  Y0 <- matrix(Y[idx1,,drop=FALSE],ncol=2,byrow=TRUE)
+  Y1 <- matrix(Y[idx2,,drop=FALSE],ncol=2,byrow=TRUE)
+  XX0 <- matrix(t(X0),ncol=nx*2,byrow=TRUE)
+  XX1 <- matrix(t(X1),ncol=nx*2,byrow=TRUE)
+  dS0 <- cbind(1,4)
+  dS1 <- cbind(dS1,c(1,0,0,1))
+
+  
+}
+
+###}}} biprobit
+
 ###{{{ bptwin
 
 bptwin <- function(formula, data, id, zyg, twinnum, weight=NULL,
@@ -33,7 +72,6 @@ bptwin <- function(formula, data, id, zyg, twinnum, weight=NULL,
   dS1 <- cbind(dS1,c(1,0,0,1))
 
   mytr <- function(x) (x)
-
   if (unique) {
     plen <- 2*nx+3
     midx1 <- seq_len(nx)
@@ -87,7 +125,6 @@ bptwin <- function(formula, data, id, zyg, twinnum, weight=NULL,
                 Sigma1,dS1,Y1,XX1,W1,!is.null(W1),epsilon==2)
 
 ##    browser()
-
     if (indiv) {
       l <- c(U0$loglik,U1$loglik)
       val1 <- matrix(0,ncol=plen,nrow=(nrow(U0$score)))
@@ -129,7 +166,6 @@ bptwin <- function(formula, data, id, zyg, twinnum, weight=NULL,
   } else {
     op <- nlminb(p0,f,control=control,...)
   }
-
 ##  UU <- U(op$par,indiv=FALSE)
 ##  res <- list(score=UU,logLik=sum(attributes(UU)$logLik),opt=op)
 ##  return(res)
@@ -215,18 +251,6 @@ bptwin0 <- function(formula, data, id, zyg, twinnum, weight=NULL,
   plen <- nx+1
   dS0 <- rbind(rep(1,4))
   dS1 <- dS0##rbind(dS0,c(1,0,0,1))
-
-  ## YW0 <- Y0*sqrt(W0)
-  ## YW1 <- Y1*sqrt(W1)
-  ## mean(apply(YW0,1,prod))
-  ## mean(apply(YW1,1,prod))
-  ## mean(apply(Y0,1,prod))
-  ## mean(apply(Y1,1,prod))
-
-  ## YW0 <- Y0*W0
-  ## YW1 <- Y1*W1
-  ## mean(apply(YW0,1,prod))
-  ## mean(apply(YW1,1,prod))
  
   mytr <- function(x) (x)  
   U <- function(p,group=1,indiv=FALSE) {
@@ -277,15 +301,16 @@ bptwin0 <- function(formula, data, id, zyg, twinnum, weight=NULL,
     } else {
       op <- nlminb(p0,f,control=control,...)
     }
-    browser()
+
+    
     UU <- U(op$par,group=i,indiv=TRUE)
     J <- crossprod(UU)
     iJ <- solve(J)
     U. <- function(p) U(p,group=i)
-    I <- numDeriv::jacobian(U.,op$par)
-    Is <- (I+t(I))/2
-    ##  V <- J%*%Is%*%J
-    V <- iJ
+    I <- -numDeriv::jacobian(U.,op$par)    
+    ##    I <- (I+t(I))/2
+    V <- iJ%*%I%*%iJ
+##    V <- iJ
 
     cc <- cbind(op$par,sqrt(diag(V)))
     cc <- cbind(cc,cc[,1]/cc[,2],2*(1-pnorm(abs(cc[,1]/cc[,2]))))
@@ -327,3 +352,101 @@ summary.bptwin.list <- function(object,...) {
 
 print.bptwin.list <- function(x,...) summary(x,...)
 ###}}} bptwin.list methods
+
+###{{{ bpACE
+
+bpACE <- function(formula, data, id, zyg, twinnum, weight=NULL,
+                  control=list(trace=1), intercepts=ifelse(unique,2,1),
+                  unique=TRUE, p,...) {
+
+  mycall <- match.call()
+  idtab <- table(data[,id])
+  data0 <- data[as.character(data[,id])%in%names(idtab)[idtab==2],]
+  data0 <- data0[order(data0[,id]),]
+  idx2 <- as.factor(data0[,zyg])==levels(as.factor(data0[,zyg]))[1]
+  idx1 <- as.factor(data0[,zyg])==levels(as.factor(data0[,zyg]))[2]
+
+  X <- model.matrix(formula,data0)
+  nx <- ncol(X)
+  yvar <- paste(deparse(formula[[2]]),collapse="")
+  Y <- cbind(as.numeric(data0[,yvar]))-(!is.numeric(data0[,yvar]))
+  W0 <- W1 <- NULL
+  if (!is.null(weight)) {
+    W <- cbind(data0[,weight])
+    W0 <- matrix(W[idx1,,drop=FALSE],ncol=2,byrow=TRUE)
+    W1 <- matrix(W[idx2,,drop=FALSE],ncol=2,byrow=TRUE)
+  }
+  X0 <- X[idx1,,drop=FALSE]
+  X1 <- X[idx2,,drop=FALSE]
+  Y0 <- matrix(Y[idx1,,drop=FALSE],ncol=2,byrow=TRUE)
+  Y1 <- matrix(Y[idx2,,drop=FALSE],ncol=2,byrow=TRUE)
+  XX0 <- matrix(t(X0),ncol=nx*2,byrow=TRUE)
+  XX1 <- matrix(t(X1),ncol=nx*2,byrow=TRUE)
+  midx <- 1:nx
+  plen <- nx+2
+  dS0 <- rbind(rep(1,4),rep(1,4))
+  dS1 <- rbind(c(1,.5,.5,1),rep(1,4))
+  A <- matrix(dS1[1,],ncol=2)
+  
+  U <- function(p,indiv=FALSE) {
+    B <- cbind(p[midx])
+    Sigma0 <- diag(2) + p[plen-1] + p[plen]
+    mu0 <- X0%*%B
+    Mu0 <- matrix(mu0,ncol=2,byrow=TRUE)
+    U0 <- .Call("biprobit0",
+                Mu0,
+                Sigma0,dS0,Y0,XX0,W0,!is.null(W0))         
+    Sigma1 <- diag(2) + p[plen] + p[plen-1]*A
+    mu1 <- X1%*%B
+    Mu1 <- matrix(mu1,ncol=2,byrow=TRUE)      
+    U1 <- .Call("biprobit0",
+                  Mu1,
+                Sigma1,dS1,Y1,XX1,W1,!is.null(W1))
+    if (indiv) {
+      val <- rbind(U0$score,U1$score)
+      attributes(val)$logLik <- c(U0$loglik,U1$loglik)
+      return(val)
+    }
+    val <- colSums(U1$score)+colSums(U0$score)
+    attributes(val)$logLik <- sum(U1$loglik)+sum(U0$loglik)
+    return(val)
+  }
+
+  p0 <- rep(1,plen)
+  if (!is.null(control$start)) {
+    p0 <- control$start
+    control$start <- NULL
+  }
+
+  if (!missing(p)) return(U(p,indiv=FALSE))
+  
+  f <- function(p) crossprod(U(p))[1]
+  f0 <- function(p) -sum(attributes(U(p))$logLik)
+
+  browser()
+  
+  if (!is.null(control$simple)) {
+    control$simple <- NULL
+    op <- nlminb(p0,f0,control=control,...)
+  } else {
+    op <- nlminb(p0,f,control=control,...)
+  }    
+  UU <- U(op$par,indiv=TRUE)
+  J <- crossprod(UU)
+  iJ <- solve(J)
+  I <- -numDeriv::jacobian(U,op$par)
+  V <- iJ%*%I%*%iJ
+  
+  cc <- cbind(op$par,sqrt(diag(V)))
+  cc <- cbind(cc,cc[,1]/cc[,2],2*(1-pnorm(abs(cc[,1]/cc[,2]))))
+  colnames(cc) <- c("Estimate","Std.Err","Z","p-value")
+  rnames1 <- colnames(X0)
+  vnames1 <- NULL
+  trnam <- ""
+  rownames(cc) <- c(rnames1,c("var(A)","var(C)"))
+  val <- list(coef=cc,vcov=V,score=UU,logLik=attributes(UU)$logLik,opt=op, call=mycall)
+  class(val) <- "bptwin"  
+  return(val)
+}
+
+###}}} bpACE

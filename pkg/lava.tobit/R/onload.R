@@ -5,7 +5,7 @@
   addhook("lava.tobit.init.hook","init.hooks")
 
   lava.options(tobitAlgorithm=mvtnorm::GenzBretz(abseps=1e-5),
-               tobitseed=1)
+               tobitseed=1, threshold=1)
   desc <- utils::packageDescription(pkg)
   cat("Loading '", desc$Package, "' package...\n", sep="")
   cat("Version    : ", desc$Version, "\n", sep="")

@@ -30,7 +30,7 @@ lava.tobit.estimate.hook <- function(x,data,weight,weight2,estimator,...) {
       estimator <- "tobit"
       if (is.null(weight)) {        
         W <- data[,binary(x),drop=FALSE]; W[W==0] <- -1; colnames(W) <- binary(x)
-        weight <- W
+        weight <- lava.options()$threshold*W
       } else {
         ##        if (!all(binary(x)%in%colnames(data)))
         ##        W <- data[,binary(x),drop=FALSE]; W[W==0] <- -1; colnames(W) <- binary(x)
