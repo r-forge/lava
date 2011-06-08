@@ -444,12 +444,16 @@ bpACE <- function(formula, data, id, zyg, twinnum, weight=NULL,
   
   f <- function(p) crossprod(U(p))[1]
   f0 <- function(p) -sum(attributes(U(p))$logLik)
-  
+  g0 <- function(p) -as.numeric(U(p))
+
   if (!is.null(control$simple)) {
     control$simple <- NULL
-    op <- nlminb(p0,f0,control=control,...)
+    ##    op <- nlminb(p0,f0,g0,control=control,...)
+    op <- nlminb(p0,f0,grad=g0,control=control,...)
   } else {
     op <- nlminb(p0,f,control=control,...)
+    ##  op <- nlm(f,p0,print.level=2)
+    ##  op <- spg(p0,f,control=control,...)
   }
   UU <- U(op$par,indiv=TRUE)
   J <- crossprod(UU)
