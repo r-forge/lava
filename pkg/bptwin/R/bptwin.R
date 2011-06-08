@@ -150,11 +150,12 @@ bptwin <- function(formula, data, id, zyg, twinnum, weight=NULL,
     attributes(val)$logLik <- l
     return(val)
   }
+  
   p0 <- rep(0,plen)  
-  if (!is.null(control$start)) {
+  if (!is.null(control$start)) {    
     p0 <- control$start
     control$start <- NULL
-  }
+  } 
   if (!missing(p)) return(U(p,indiv=FALSE))
   
   f <- function(p) crossprod(U(p))[1]
@@ -173,6 +174,7 @@ bptwin <- function(formula, data, id, zyg, twinnum, weight=NULL,
 
   UU <- U(op$par,indiv=TRUE)
   J <- crossprod(UU)
+  browser()
   iJ <- solve(J)  
   I <- numDeriv::jacobian(U,op$par)
   Is <- (I+t(I))/2
@@ -216,6 +218,7 @@ print.bptwin <- function(x,...) {
   cat("\nScore: "); cat(S);
   cat("\nlogLik: "); cat(sum(x$logLik),"\n");
 }
+summary.bptwin <- function(object,...) object
 
 ###}}} bptwin methods
 
@@ -358,7 +361,7 @@ print.bptwin.list <- function(x,...) summary(x,...)
 
 bpACE <- function(formula, data, id, zyg, twinnum, weight=NULL,
                   control=list(trace=1), intercepts=ifelse(unique,2,1),
-                  unique=TRUE, p,...) {
+                  unique=TRUE, p, debug=FALSE,...) {
 
   mycall <- match.call()
   idtab <- table(data[,id])
@@ -428,10 +431,13 @@ bpACE <- function(formula, data, id, zyg, twinnum, weight=NULL,
     return(val)
   }
 
-  p0 <- rep(1,plen)
+  p0 <- rep(0,plen)
   if (!is.null(control$start)) {
     p0 <- control$start
     control$start <- NULL
+  } else {
+    g <- glm(formula,family=binomial(probit),data=data)
+    p0[midx] <- coef(g)
   }
 
   if (!missing(p)) return(U(p,indiv=FALSE))
@@ -444,12 +450,13 @@ bpACE <- function(formula, data, id, zyg, twinnum, weight=NULL,
     op <- nlminb(p0,f0,control=control,...)
   } else {
     op <- nlminb(p0,f,control=control,...)
-  }    
+  }
   UU <- U(op$par,indiv=TRUE)
   J <- crossprod(UU)
   iJ <- solve(J)
   I <- -numDeriv::jacobian(U,op$par)
   V <- iJ%*%I%*%iJ
+  if (debug) browser()
   
   cc <- cbind(op$par,sqrt(diag(V)))
   cc <- cbind(cc,cc[,1]/cc[,2],2*(1-pnorm(abs(cc[,1]/cc[,2]))))
