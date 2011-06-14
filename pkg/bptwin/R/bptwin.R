@@ -39,6 +39,11 @@ biprobit <- function(formula, data, id, zyg, twinnum, weight=NULL,
 
 ###{{{ bptwin methods
 
+sim <- function(x,...) UseMethod("sim")
+sim.bptwin <- function(x,n=100,p,...) {
+  return(x)
+}
+score <- function(x,...) UseMethod("score")
 score.bptwin <- function(x,indiv=FALSE,...) {
   if (indiv) { s <- x$score; attributes(s)$logLik <- NULL; return(s) }
   colSums(x$score)

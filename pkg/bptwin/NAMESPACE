@@ -1,2 +1,25 @@
 useDynLib(bptwin)
-exportPattern("^[[:alpha:]]+")
+import(utils)
+import(stats)
+
+export(
+       bptwin,
+       bptwin0,
+       bptwin,
+       biprobit,
+       sim,
+       score
+)
+
+S3method(sim, "bptwin")
+S3method(score, "bptwin")
+S3method(logLik, "bptwin")
+S3method(vcov, "bptwin")
+S3method(coef, "bptwin")
+S3method(print, "bptwin")
+S3method(summary, "bptwin")
+S3method(print, "summary.bptwin")
+
+S3method(summary, "bptwin.list")
+S3method(print, "bptwin.list")
+       
