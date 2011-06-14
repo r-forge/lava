@@ -430,6 +430,8 @@ summary.twinlm <- function(object,...) {
     DZcc <- with(M2, pmvnorm(lower=c(0,0),upper=c(Inf,Inf),mean=xi[myidx,1],sigma=C[myidx,myidx]))
 ##    browser()
   }
+
+  
   
   res <- list(estimate=myest, zyg=zygtab, varEst=varEst, varSigma=varSigma, hval=hval, heritability=h2val, hci=ci.logit, corMZ=corMZ, corDZ=corDZ,
               concMZ=MZcc, concDZ=DZcc)                              
@@ -445,7 +447,7 @@ print.summary.twinlm <- function(x,signif.stars=FALSE,...) {
   printCoefmat(x$estimate,signif.stars=signif.stars,...)
   cat("\n")
   myzyg <- with(x,zyg)
-  names(myzyg) <- c("Group 1 (MZ)", "Group 2 (DZ)")
+  names(myzyg) <- c("Group 1 (DZ)", "Group 2 (MZ)")
   print(myzyg)
 ##   cat("\n")
 ##   mynames <- c("sigmaA","sigmaC","sigmaD","sigmaE")
