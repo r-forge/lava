@@ -41,6 +41,7 @@ biprobit <- function(formula, data, id, zyg, twinnum, weight=NULL,
 
 sim <- function(x,...) UseMethod("sim")
 sim.bptwin <- function(x,n=100,p,...) {
+  browser()
   return(x)
 }
 score <- function(x,...) UseMethod("score")
@@ -150,8 +151,8 @@ print.summary.bptwin <- function(x,...) {
   print(x$object)
   cat("\n")
   print(x$coef)
-  cat("\nConcordance (MZ; DZ):", x$concordance,"\n")
-  cat("Conditional (MZ; DZ):", x$conditional,"\n\n")
+  cat("\nConcordance (MZ; DZ):\t\t", x$concordance,"\n")
+  cat("Case-wise concordance (MZ; DZ):\t", x$conditional,"\n\n")
   print(x$h)
   cat("\n")
 }
@@ -161,17 +162,20 @@ print.summary.bptwin <- function(x,...) {
 ###{{{ bpACE/bptwin
 
 bpACE <- bptwin <- function(formula, data, id, zyg, twinnum, DZ, weight=NULL,
+                            weight2=NULL,
                             time=NULL,
                             B, degree=1, Bconstrain=TRUE,
                             control=list(trace=1),
-                            type="ace",                            
+                            type="ace",
                             eqmean=TRUE,
                             param=0,
                             robustvar=TRUE,                            
                             p, debug=FALSE,...) {
 
+###{{{ setup
+
   mycontrol <- list(trace=1,
-                    method="ucminf",
+                    method="nlminb",
                     mle=is.null(weight))
   if (length(control)>0)
     mycontrol[names(control)] <- control
@@ -182,6 +186,7 @@ bpACE <- bptwin <- function(formula, data, id, zyg, twinnum, DZ, weight=NULL,
   if (!is.null(time) | !missing(B)) {
     if (missing(B)) {
       B <- bs(data[,time],degree=degree)
+      Bord <- cbind(data[,time],B)[order(data[,time]),,drop=FALSE]
       colnames(B) <- paste(time,"_",1:ncol(B),sep="")
       data <- cbind(data,B)
       formula <- update(formula, paste(".~.+",paste(colnames(B),collapse="+",sep="")))
@@ -266,7 +271,11 @@ bpACE <- bptwin <- function(formula, data, id, zyg, twinnum, DZ, weight=NULL,
     }
     return(list(Sigma0=Sigma0,Sigma1=Sigma1))
   }  
+
+###}}} setup
   
+###{{{ U  
+
   U <- function(p,indiv=FALSE) {
     b0 <- cbind(p[midx0])
     b1 <- cbind(p[midx1])
@@ -326,6 +335,85 @@ bpACE <- bptwin <- function(formula, data, id, zyg, twinnum, DZ, weight=NULL,
     return(val)
   }
 
+###}}} U
+
+###{{{ Concordance model - Left Truncation/Delayed Entry
+  browser()
+  U2 <- function(p,t,indiv=FALSE) {
+    b0 <- cbind(p[midx0])
+    b1 <- cbind(p[midx1])
+    B0 <- trMean(b0,Blen); B1 <- trMean(b1,Blen)    
+    S <- Sigma(p)
+    X00 <- X0; X11 <- X1
+    Y00 <- Y0; Y11 <- Y1
+    XX00 <- XX0; XX11 <- XX1;
+    if (!missing(t)) {
+      timeidx <- which(t==Bord[,1])
+      t0 <- data0[idx0,time]<=t
+      t0. <- matrix(t0,ncol=2,byrow=TRUE)
+      t1 <- data0[idx1,time]<=t
+      t1. <- matrix(t1,ncol=2,byrow=TRUE)
+      X00 <- X0[t0,,drop=FALSE];
+      Y00 <- Y0[t0.[,1],,drop=FALSE];
+      X11 <- X1[t1,,drop=FALSE];
+      Y11 <- Y1[t1.[,1],,drop=FALSE];
+      XX00 <- XX0[t0.[,1],,drop=FALSE]
+      XX11 <- XX1[t1.[,1],,drop=FALSE]
+    }
+    
+    mu0 <- X00%*%B0
+    Mu0 <- matrix(mu0,ncol=2,byrow=TRUE)
+    U0 <- .Call("biprobit0",
+                Mu0,
+                S$Sigma0,dS0,Y00,XX00,W0,FALSE)         
+    mu1 <- X11%*%B1
+    Mu1 <- matrix(mu1,ncol=2,byrow=TRUE)      
+    U1 <- .Call("biprobit0",
+                Mu1,
+                S$Sigma1,dS1,Y11,XX11,W1,FALSE)
+    
+    if (indiv) {
+      val <- matrix(0,ncol=plen,nrow=nrow(U0$score)+nrow(U1$score))
+      val[seq_len(nrow(U0$score)),c(midx0,vidx0)] <- U0$score
+      val[nrow(U0$score)+seq_len(nrow(U1$score)),c(midx1,vidx1)] <- U1$score
+      for (ii in vidx) {
+        val[,ii] <- val[,ii]*dmytr(p[ii])
+      }
+      if (Bconstrain & Blen>0) {
+        Bidx <- attributes(B0)$idx
+        val[,Bidx] <- as.numeric((val[,Bidx,drop=FALSE])%*%attributes(B0)$D[Bidx,Bidx,drop=FALSE])
+        if (!eqmean) {
+          Bidx <- midx1[attributes(B1)$idx]
+          val[,Bidx] <- as.numeric((val[,Bidx,drop=FALSE])%*%attributes(B1)$D[attributes(B1)$idx,attributes(B1)$idx])
+        }
+      }      
+      attributes(val)$logLik <- c(U0$loglik,U1$loglik)
+      return(val)
+    }
+    
+    val <- numeric(plen)
+    val[c(midx0,vidx0)] <- colSums(U0$score)
+    val[c(midx1,vidx1)] <- val[c(midx1,vidx1)]+colSums(U1$score)
+    for (ii in vidx)
+      val[ii] <- val[ii]*dmytr(p[ii])
+
+##    browser()
+    if (Bconstrain & Blen>0) {
+      Bidx <- attributes(B0)$idx
+      val[Bidx] <- as.numeric(val[Bidx]%*%attributes(B0)$D[Bidx,Bidx])
+      if (!eqmean) {
+        Bidx <- midx1[attributes(B1)$idx]
+        val[Bidx] <- as.numeric(val[Bidx]%*%attributes(B1)$D[attributes(B1)$idx,attributes(B1)$idx])
+      }
+    }
+    
+    attributes(val)$logLik <- sum(U0$loglik)+sum(U1$loglik)
+    return(val)
+  }
+
+###}}} Concordance model - Left Truncation/Delayed Entry
+
+  
   p0 <- rep(0,plen)
   if (!is.null(control$start)) {
     p0 <- control$start
