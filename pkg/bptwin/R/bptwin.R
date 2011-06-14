@@ -338,7 +338,7 @@ bpACE <- bptwin <- function(formula, data, id, zyg, twinnum, DZ, weight=NULL,
 ###}}} U
 
 ###{{{ Concordance model - Left Truncation/Delayed Entry
-  browser()
+
   U2 <- function(p,t,indiv=FALSE) {
     b0 <- cbind(p[midx0])
     b1 <- cbind(p[midx1])
