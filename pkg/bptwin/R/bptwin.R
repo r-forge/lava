@@ -163,8 +163,8 @@ print.summary.bptwin <- function(x,...) {
 
 bpACE <- bptwin <- function(formula, data, id, zyg, twinnum, DZ, weight=NULL,
                             weight2=NULL,
-                            time=NULL,
-                            B, degree=1, Bconstrain=TRUE,
+                            entry=NULL, time,
+                            B=NULL, degree=1, Bconstrain=TRUE,
                             control=list(trace=1),
                             type="ace",
                             eqmean=TRUE,
@@ -181,22 +181,40 @@ bpACE <- bptwin <- function(formula, data, id, zyg, twinnum, DZ, weight=NULL,
     mycontrol[names(control)] <- control
   if (length(grep("flex",tolower(type)))>0) { type <- "u"; eqmean <- FALSE }
 
+  Y <- suppressWarnings(model.frame(formula,data,na.action="na.pass")[,1])
   Blen <- 0
   if (degree>0)
-  if (!is.null(time) | !missing(B)) {
-    if (missing(B)) {
-      B <- bs(data[,time],degree=degree)
-      Bord <- cbind(data[,time],B)[order(data[,time]),,drop=FALSE]
-      colnames(B) <- paste(time,"_",1:ncol(B),sep="")
-      data <- cbind(data,B)
-      formula <- update(formula, paste(".~.+",paste(colnames(B),collapse="+",sep="")))
+  if (is.Surv(Y) | !missing(time) | !is.null(B)) {
+    if (is.Surv(Y)) {
+      if (ncol(Y)==3) {
+        entry <- Y[,1]
+        time <- Y[,2]
+        Y <- Y[,3]*1 # event
+      } else {
+        time <- Y[,1]
+        Y <- Y[,2]*1
+      }
+    } else {
+      if (is.character(time))
+        time <- data[,time]
+      if (is.character(entry))
+        entry <- data[,entry]
+    }
+    if (is.null(B)) {
+      B <- bs(time,degree=degree)
+      Bord <- cbind(time,B)[order(time),,drop=FALSE]
+##      B <- bs(data[,time],degree=degree)
+##      Bord <- cbind(data[,time],B)[order(data[,time]),,drop=FALSE]
+      colnames(B) <- paste("B","_",1:ncol(B),sep="")
+##      data <- cbind(data,B)
+##     formula <- update(formula, paste(".~.+",paste(colnames(B),collapse="+",sep="")))
       Blen <- ncol(B)   
     }
   }
   mycall <- match.call()
   idtab <- table(data[,id])
-  data0 <- data[as.character(data[,id])%in%names(idtab)[idtab==2],]
-  data0 <- data0[order(data0[,id]),]
+  ii0 <- order(data[as.character(data[,id])%in%names(idtab)[idtab==2],id])
+  data0 <- data[ii0,]
   if (!missing(DZ)) {
     idx1 <- data0[,zyg]==DZ
     idx0 <- data0[,zyg]!=DZ
@@ -206,10 +224,14 @@ bpACE <- bptwin <- function(formula, data, id, zyg, twinnum, DZ, weight=NULL,
   }
   N <- cbind(length(idx0),length(idx1)); colnames(N) <- c("MZ","DZ");rownames(N) <- ""
 
-  X <- model.matrix(formula,data0)
+  B <- B[ii0,]
+  X <- cbind(model.matrix(as.formula(paste("~",1,attributes(terms(formula))$term.labels,collapse="+")),data0),B)
+##  X <- cbind(model.matrix(formula,data0))
   nx <- ncol(X)
   yvar <- paste(deparse(formula[[2]]),collapse="")
-  Y <- cbind(as.numeric(data0[,yvar]))-(!is.numeric(data0[,yvar]))
+  
+  Y <- cbind(as.numeric(Y[ii0])-!is.numeric(Y[ii0]))
+  ##cbind(as.numeric(data0[,yvar]))-(!is.numeric(data0[,yvar]))
   W0 <- W1 <- NULL
   if (!is.null(weight)) {
     W <- cbind(data0[,weight])
@@ -222,6 +244,7 @@ bpACE <- bptwin <- function(formula, data, id, zyg, twinnum, DZ, weight=NULL,
   Y1 <- matrix(Y[idx1,,drop=FALSE],ncol=2,byrow=TRUE)
   XX0 <- matrix(t(X0),ncol=nx*2,byrow=TRUE)
   XX1 <- matrix(t(X1),ncol=nx*2,byrow=TRUE)
+
   
   midx <- 1:nx
   dS0 <- rbind(rep(1,4),rep(1,4),rep(1,4)) ## MZ
@@ -279,23 +302,21 @@ bpACE <- bptwin <- function(formula, data, id, zyg, twinnum, DZ, weight=NULL,
   U <- function(p,indiv=FALSE) {
     b0 <- cbind(p[midx0])
     b1 <- cbind(p[midx1])
-    B0 <- b0; B1 <- b1
+    b00 <- b0; b11 <- b1
     if (Bconstrain) {
-      B0 <- trMean(b0,Blen); B1 <- trMean(b1,Blen)
+      b00 <- trMean(b0,Blen); b11 <- trMean(b1,Blen)
     }
-    S <- Sigma(p)
-    
-    mu0 <- X0%*%B0
+    S <- Sigma(p)    
+    mu0 <- X0%*%b00
     Mu0 <- matrix(mu0,ncol=2,byrow=TRUE)
     U0 <- .Call("biprobit0",
                 Mu0,
                 S$Sigma0,dS0,Y0,XX0,W0,!is.null(W0))         
-    mu1 <- X1%*%B1
+    mu1 <- X1%*%b11
     Mu1 <- matrix(mu1,ncol=2,byrow=TRUE)      
     U1 <- .Call("biprobit0",
                 Mu1,
-                S$Sigma1,dS1,Y1,XX1,W1,!is.null(W1))
-    
+                S$Sigma1,dS1,Y1,XX1,W1,!is.null(W1))    
     if (indiv) {
       val <- matrix(0,ncol=plen,nrow=nrow(U0$score)+nrow(U1$score))
       val[seq_len(nrow(U0$score)),c(midx0,vidx0)] <- U0$score
@@ -304,33 +325,29 @@ bpACE <- bptwin <- function(formula, data, id, zyg, twinnum, DZ, weight=NULL,
         val[,ii] <- val[,ii]*dmytr(p[ii])
       }
       if (Bconstrain & Blen>0) {
-        Bidx <- attributes(B0)$idx
-        val[,Bidx] <- as.numeric((val[,Bidx,drop=FALSE])%*%attributes(B0)$D[Bidx,Bidx,drop=FALSE])
+        Bidx <- attributes(b00)$idx
+        val[,Bidx] <- as.numeric((val[,Bidx,drop=FALSE])%*%attributes(b00)$D[Bidx,Bidx,drop=FALSE])
         if (!eqmean) {
-          Bidx <- midx1[attributes(B1)$idx]
-          val[,Bidx] <- as.numeric((val[,Bidx,drop=FALSE])%*%attributes(B1)$D[attributes(B1)$idx,attributes(B1)$idx])
+          Bidx <- midx1[attributes(b11)$idx]
+          val[,Bidx] <- as.numeric((val[,Bidx,drop=FALSE])%*%attributes(b11)$D[attributes(b11)$idx,attributes(b11)$idx])
         }
       }      
       attributes(val)$logLik <- c(U0$loglik,U1$loglik)
       return(val)
-    }
-    
+    }    
     val <- numeric(plen)
     val[c(midx0,vidx0)] <- colSums(U0$score)
     val[c(midx1,vidx1)] <- val[c(midx1,vidx1)]+colSums(U1$score)
     for (ii in vidx)
       val[ii] <- val[ii]*dmytr(p[ii])
-
-##    browser()
     if (Bconstrain & Blen>0) {
-      Bidx <- attributes(B0)$idx
-      val[Bidx] <- as.numeric(val[Bidx]%*%attributes(B0)$D[Bidx,Bidx])
+      Bidx <- attributes(b00)$idx
+      val[Bidx] <- as.numeric(val[Bidx]%*%attributes(b00)$D[Bidx,Bidx])
       if (!eqmean) {
-        Bidx <- midx1[attributes(B1)$idx]
-        val[Bidx] <- as.numeric(val[Bidx]%*%attributes(B1)$D[attributes(B1)$idx,attributes(B1)$idx])
+        Bidx <- midx1[attributes(b11)$idx]
+        val[Bidx] <- as.numeric(val[Bidx]%*%attributes(b11)$D[attributes(b11)$idx,attributes(b11)$idx])
       }
-    }
-    
+    }    
     attributes(val)$logLik <- sum(U0$loglik)+sum(U1$loglik)
     return(val)
   }
@@ -399,11 +416,11 @@ bpACE <- bptwin <- function(formula, data, id, zyg, twinnum, DZ, weight=NULL,
 
 ##    browser()
     if (Bconstrain & Blen>0) {
-      Bidx <- attributes(B0)$idx
-      val[Bidx] <- as.numeric(val[Bidx]%*%attributes(B0)$D[Bidx,Bidx])
+      Bidx <- attributes(b00)$idx
+      val[Bidx] <- as.numeric(val[Bidx]%*%attributes(b00)$D[Bidx,Bidx])
       if (!eqmean) {
-        Bidx <- midx1[attributes(B1)$idx]
-        val[Bidx] <- as.numeric(val[Bidx]%*%attributes(B1)$D[attributes(B1)$idx,attributes(B1)$idx])
+        Bidx <- midx1[attributes(b11)$idx]
+        val[Bidx] <- as.numeric(val[Bidx]%*%attributes(b11)$D[attributes(b11)$idx,attributes(b11)$idx])
       }
     }
     
@@ -412,14 +429,14 @@ bpACE <- bptwin <- function(formula, data, id, zyg, twinnum, DZ, weight=NULL,
   }
 
 ###}}} Concordance model - Left Truncation/Delayed Entry
-
+  
   
   p0 <- rep(0,plen)
   if (!is.null(control$start)) {
     p0 <- control$start
     control$start <- NULL
   } else {
-    g <- glm(formula,family=binomial(probit),data=data0)
+    g <- glm(Y~-1+X,family=binomial(probit))
     p0[midx] <- coef(g)
   }
 
@@ -736,7 +753,6 @@ bptwin1 <- function(formula, data, id, zyg, twinnum, weight=NULL,
 
   UU <- U(op$par,indiv=TRUE)
   J <- crossprod(UU)
-  browser()
   iJ <- solve(J)  
   I <- numDeriv::jacobian(U,op$par)
   Is <- (I+t(I))/2
