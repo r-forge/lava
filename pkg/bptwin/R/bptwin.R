@@ -225,7 +225,9 @@ bpACE <- bptwin <- function(formula, data, id, zyg, twinnum, DZ, weight=NULL,
   N <- cbind(length(idx0),length(idx1)); colnames(N) <- c("MZ","DZ");rownames(N) <- ""
 
   B <- B[ii0,]
-  X <- cbind(model.matrix(as.formula(paste("~",1,attributes(terms(formula))$term.labels,collapse="+")),data0),B)
+  ff <- as.formula(paste("~",paste(attributes(terms(formula))$term.labels,
+                                     collapse="+"),"+1",sep=""))
+  X <- cbind(model.matrix(ff,data0),B)
 ##  X <- cbind(model.matrix(formula,data0))
   nx <- ncol(X)
   yvar <- paste(deparse(formula[[2]]),collapse="")

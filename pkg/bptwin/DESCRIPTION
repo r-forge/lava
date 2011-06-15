@@ -1,7 +1,7 @@
 Package: bptwin
 Type: Package
 Title: Bivariate probit model for twin data 
-Version: 0.2.2
+Version: 0.2.3
 Date: 2011-06-15
 Author: Klaus K. Holst
 Maintainer: Klaus K. Holst <k.k.holst@biostat.ku.dk>
