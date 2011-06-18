@@ -165,3 +165,41 @@ RcppExport SEXP biprobit0(SEXP m,
   res["score"] = U.M;
   return(res);
 }
+
+
+RcppExport SEXP FastApprox(const SEXP a,
+			   const SEXP t,
+			   const SEXP z) {
+  NumericVector A(a);
+  NumericVector T(t);
+  NumericVector Z(z);
+  vector<unsigned> idx(Z.size());
+  vector<double> newT(Z.size());
+
+  NumericVector::iterator it;  
+  double lower,upper; int pos=200;
+  for (int i=0; i<Z.size(); i++) {
+    it = lower_bound(A.begin(), A.end(), Z[i]);
+    if (it == A.begin()) { 
+      pos = 0; 
+      // upper = *it; // no smaller value  than val in vector
+    } 
+    else if (int(it-A.end())==0) {
+      pos = A.size()-1;
+      //lower = *(it-1); // no bigger value than val in vector
+    } else {
+      lower = *(it-1);
+      upper = *it;
+      pos = int(it- A.begin());
+      if (abs(Z[i]-lower)<abs(Z[i]-upper)) {
+	pos = int(it- A.begin());
+      }
+    }
+    idx[i] = pos;
+    newT[i] = T[pos];
+  }
+  List ans;
+  ans["t"] = newT;
+  ans["pos"] = idx;
+  return(ans);
+}

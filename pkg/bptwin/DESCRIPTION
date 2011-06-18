@@ -1,8 +1,8 @@
 Package: bptwin
 Type: Package
 Title: Bivariate probit model for twin data 
-Version: 0.2.3
-Date: 2011-06-15
+Version: 0.2.4
+Date: 2011-06-18
 Author: Klaus K. Holst
 Maintainer: Klaus K. Holst <k.k.holst@biostat.ku.dk>
 Description: Bivariate probit model/Liability model with right censoring and left truncation

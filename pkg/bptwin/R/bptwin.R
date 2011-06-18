@@ -1,168 +1,8 @@
-###{{{ biprobit
-
-biprobit <- function(formula, data, id, zyg, twinnum, weight=NULL,
-                     control=list(trace=1), intercepts=ifelse(unique,2,1),
-                     epsilon=ifelse(unique,1,2), unique=TRUE, p,
-                     
-                   ...) {
-
-  mycall <- match.call()
-  idtab <- table(data[,id])
-  data0 <- data[as.character(data[,id])%in%names(idtab)[idtab==2],]
-  data0 <- data0[order(data0[,id]),]
-  idx1 <- as.factor(data0[,zyg])==levels(as.factor(data0[,zyg]))[1]
-  idx2 <- as.factor(data0[,zyg])==levels(as.factor(data0[,zyg]))[2]
-
-  X <- model.matrix(formula,data0)
-  nx <- ncol(X)
-  yvar <- paste(deparse(formula[[2]]),collapse="")
-  Y <- cbind(as.numeric(data0[,yvar]))-(!is.numeric(data0[,yvar]))
-  W0 <- W1 <- NULL
-  if (!is.null(weight)) {
-    W <- cbind(data0[,weight])
-    W0 <- matrix(W[idx1,],ncol=2,byrow=TRUE)
-    W1 <- matrix(W[idx2,],ncol=2,byrow=TRUE)
-  }
-  X0 <- X[idx1,,drop=FALSE]
-  X1 <- X[idx2,,drop=FALSE]
-  Y0 <- matrix(Y[idx1,,drop=FALSE],ncol=2,byrow=TRUE)
-  Y1 <- matrix(Y[idx2,,drop=FALSE],ncol=2,byrow=TRUE)
-  XX0 <- matrix(t(X0),ncol=nx*2,byrow=TRUE)
-  XX1 <- matrix(t(X1),ncol=nx*2,byrow=TRUE)
-  dS0 <- cbind(1,4)
-  dS1 <- cbind(dS1,c(1,0,0,1))
-
-  
-}
-
-###}}} biprobit
-
-###{{{ bptwin methods
-
-sim <- function(x,...) UseMethod("sim")
-sim.bptwin <- function(x,n=100,p,...) {
-  browser()
-  return(x)
-}
-score <- function(x,...) UseMethod("score")
-score.bptwin <- function(x,indiv=FALSE,...) {
-  if (indiv) { s <- x$score; attributes(s)$logLik <- NULL; return(s) }
-  colSums(x$score)
-}
-logLik.bptwin <- function(object,indiv=FALSE,...) {
-  if (indiv) return(object$logLik)
-  n <- sum(object$N)/2
-  p <- nrow(coef(object))
-  loglik <- sum(object$logLik)
-  attr(loglik, "nall") <- n
-  attr(loglik, "nobs") <- n-p
-  attr(loglik, "df") <- p
-  class(loglik) <- "logLik"        
-  return(loglik)
-}
-vcov.bptwin <- function(object,...) object$vcov
-coef.bptwin <- function(object,...) object$coef
-print.bptwin <- function(x,...) {
-  printCoefmat(coef(x))
-  S <- colSums(x$score);  names(S) <- rep("",length(S))
-  cat("\n")
-  print(x$N)
-  cat("Score: "); cat(S);
-  cat("\nlogLik: "); cat(sum(x$logLik),"\n");
-}
-
-summary.bptwin <- function(object,level=0.05,...) {
-  trnam <- " "
-  vcoef1 <- paste("log(var(",c("A","C","D"),"))",sep="")
-  vcoef2 <- paste("log(var(",
-                  c(paste("U))","MZ",sep=trnam),
-                  paste("U))","DZ",sep=trnam)),sep="")
-  idx1 <- na.omit(match(vcoef1,rownames(coef(object))))
-  idx2 <- na.omit(match(vcoef2,rownames(coef(object))))
-  if (length(idx2)>0) {
-    idx <- idx2
-    mz <- multinomlogit(coef(object)[idx2[1]]); names(mz) <- c("U","E")
-    dz <- multinomlogit(coef(object)[idx2[2]]); names(dz) <- c("U","E")
-    cc <- c(mz[1],dz[1]) ##,mz[2],dz[2])
-    names(cc) <- c("Correlation MZ","Correlation DZ")
-    corMZ <- mz[1]; corDZ <- dz[1]
-    D <- (cbind(c(attributes(mz)$gradient[1],0),c(0,attributes(dz)$gradient[1])))
-    h <- function(x) 2*(x[1]-x[2])
-    dh <- function(x) c(2,-2)
-    i1 <- 1:2
-    corr <- NULL
-  }
-  if (length(idx1)>0) {
-    idx <- idx1
-    ACD <- match(rownames(coef(object))[idx1],vcoef1)
-    nn <- c(c("A","C","D")[ACD],"E")
-    dzsc <- c(1/2,1,1/4)[ACD]
-    cc <- multinomlogit(coef(object)[idx1,1]); names(cc) <- nn
-    D <- attributes(cc)$gradient
-    K <- length(ACD)
-    Ki <- seq_len(K)
-    corMZ <- sum(cc[Ki]); corDZ <- sum(cc[Ki]*dzsc)
-    i1 <- seq_len(length(dzsc))
-    h <- function(x) 2*(sum(x[i1])-sum(x[i1]*dzsc))
-    dh <- function(x) 2*(1-dzsc)    
-  }
-  V <- vcov(object)[idx,idx]
-  Vc <- D%*%V%*%t(D)
-  if (length(idx1)>0) {
-    b <- cbind(rep(1,K))
-    corMZ.sd <- (t(b)%*%Vc[Ki,Ki]%*%b)[1]^0.5
-    corDZ.sd <- (t(dzsc)%*%Vc[Ki,Ki]%*%dzsc)[1]^0.5    
-    corr <- rbind(c(corMZ,corMZ.sd),c(corDZ,corDZ.sd))
-    rownames(corr) <- c("Correlation MZ","Correlation DZ")
-  }
-  newcoef <- rbind(cbind(cc,diag(Vc)^0.5),corr); colnames(newcoef) <- c("Estimate","Std.Err")  
-  logit <- function(p) log(p/(1-p))
-  tigol <- function(z) 1/(1+exp(-z))
-  dlogit <- function(p) 1/(p*(1-p))
-  logith <- function(x) logit(h(x))
-  dlogith <- function(x) dlogit(h(x))*dh(x)
-  Dlh <- dlogith(cc[i1])
-  sdlh <- (t(Dlh)%*%Vc[i1,i1]%*%(Dlh))[1]^0.5
-  H <- h(cc[i1])
-  ci <- tigol(logith(cc[i1]) + qnorm(1-level/2)*c(-1,1)*sdlh)  
-  
-  concordance <-  conditional <- marg <- c()
-  mu <- coef(object)[1,1]
-  for (Sigma in list(object$Sigma0,object$Sigma1)) {
-    mu.cond <- function(x) mu+Sigma[1,2]/Sigma[2,2]*(x-mu)
-    var.cond <- Sigma[1,1]-Sigma[1,2]^2/Sigma[2,2]    
-    cp <- pnorm(mu[1])
-    cc0 <- pmvnorm(lower=c(0,0),mean=c(mu,mu),sigma=Sigma)
-    px <- 1-pnorm(0,mu,Sigma[2,2]^0.5)
-    concordance <- c(concordance,cc0)
-    marg <- c(marg,px)
-    conditional <- c(conditional,cc0/px)
-  }
-  names(concordance) <- names(conditional) <- c("MZ","DZ")
-  hval <- rbind(c(H,ci)); colnames(hval) <- c("Estimate",paste(100*c(level/2,1-level/2),"%",sep="")); rownames(hval) <- "Heritability"  
-  res <- list(object=object, h=hval,
-              coef=newcoef, concordance=concordance, conditional=conditional)
-  class(res) <- "summary.bptwin"
-  res
-}
-
-print.summary.bptwin <- function(x,...) {
-  cat("\n")
-  print(x$object)
-  cat("\n")
-  print(x$coef)
-  cat("\nConcordance (MZ; DZ):\t\t", x$concordance,"\n")
-  cat("Case-wise concordance (MZ; DZ):\t", x$conditional,"\n\n")
-  print(x$h)
-  cat("\n")
-}
-
-###}}} bptwin methods
 
 ###{{{ bpACE/bptwin
 
 bpACE <- bptwin <- function(formula, data, id, zyg, twinnum, DZ, weight=NULL,
-                            weight2=NULL,
+                            truncweight=NULL,
                             entry=NULL, time,
                             B=NULL, degree=1, Bconstrain=TRUE,
                             control=list(trace=1),
@@ -183,34 +23,35 @@ bpACE <- bptwin <- function(formula, data, id, zyg, twinnum, DZ, weight=NULL,
 
   Y <- suppressWarnings(model.frame(formula,data,na.action="na.pass")[,1])
   Blen <- 0
+  Bord <- c()
   if (degree>0)
-  if (is.Surv(Y) | !missing(time) | !is.null(B)) {
-    if (is.Surv(Y)) {
-      if (ncol(Y)==3) {
-        entry <- Y[,1]
-        time <- Y[,2]
-        Y <- Y[,3]*1 # event
+    if (is.Surv(Y) | !missing(time) | !is.null(B)) {
+      if (is.Surv(Y)) {
+        if (ncol(Y)==3) {
+          entry <- Y[,1]
+          time <- Y[,2]
+          Y <- Y[,3]*1 # event
+        } else {
+          time <- Y[,1]
+          Y <- Y[,2]*1
+        }
       } else {
-        time <- Y[,1]
-        Y <- Y[,2]*1
+        if (is.character(time))
+          time <- data[,time]
+        if (is.character(entry))
+          entry <- data[,entry]
       }
-    } else {
-      if (is.character(time))
-        time <- data[,time]
-      if (is.character(entry))
-        entry <- data[,entry]
+      if (is.null(B)) {
+        B <- bs(time,degree=degree)
+        Bord <- cbind(time,B)[order(time),,drop=FALSE]
+        ##      B <- bs(data[,time],degree=degree)
+        ##      Bord <- cbind(data[,time],B)[order(data[,time]),,drop=FALSE]
+        colnames(B) <- paste("B","_",1:ncol(B),sep="")
+        ##      data <- cbind(data,B)
+        ##     formula <- update(formula, paste(".~.+",paste(colnames(B),collapse="+",sep="")))
+        Blen <- ncol(B)   
+      }
     }
-    if (is.null(B)) {
-      B <- bs(time,degree=degree)
-      Bord <- cbind(time,B)[order(time),,drop=FALSE]
-##      B <- bs(data[,time],degree=degree)
-##      Bord <- cbind(data[,time],B)[order(data[,time]),,drop=FALSE]
-      colnames(B) <- paste("B","_",1:ncol(B),sep="")
-##      data <- cbind(data,B)
-##     formula <- update(formula, paste(".~.+",paste(colnames(B),collapse="+",sep="")))
-      Blen <- ncol(B)   
-    }
-  }
   mycall <- match.call()
   idtab <- table(data[,id])
   ii0 <- order(data[as.character(data[,id])%in%names(idtab)[idtab==2],id])
@@ -222,13 +63,14 @@ bpACE <- bptwin <- function(formula, data, id, zyg, twinnum, DZ, weight=NULL,
     idx1 <- as.factor(data0[,zyg])==levels(as.factor(data0[,zyg]))[1] # DZ
     idx0 <- as.factor(data0[,zyg])==levels(as.factor(data0[,zyg]))[2] # MZ
   }
-  N <- cbind(length(idx0),length(idx1)); colnames(N) <- c("MZ","DZ");rownames(N) <- ""
+
+  N <- cbind(sum(idx0),sum(idx1)); colnames(N) <- c("MZ","DZ");rownames(N) <- ""
 
   B <- B[ii0,]
   ff <- as.formula(paste("~",paste(attributes(terms(formula))$term.labels,
-                                     collapse="+"),"+1",sep=""))
+                                   collapse="+"),"+1",sep=""))
   X <- cbind(model.matrix(ff,data0),B)
-##  X <- cbind(model.matrix(formula,data0))
+  ##  X <- cbind(model.matrix(formula,data0))
   nx <- ncol(X)
   yvar <- paste(deparse(formula[[2]]),collapse="")
   
@@ -281,11 +123,11 @@ bpACE <- bptwin <- function(formula, data, id, zyg, twinnum, DZ, weight=NULL,
   Em <- diag(2)
   
   ##mytr <- function(x) x; dmytr <- function(x) 1
-  ##mytr <- function(x) x^2; dmytr <- function(x) 2*x
+  ##  mytr <- function(x) x^2; dmytr <- function(x) 2*x
   ##mytr <- function(z) 1/(1+exp(-z)); dmytr <- function(z) exp(-z)/(1+exp(-z))^2
   mytr <- exp; dmytr <- exp
 
-  Sigma <- function(p0) {
+  Sigma <- function(p0) {    
     p0[vidx] <- mytr(p0[vidx])    
     if (ACDU["u"]) {     
       Sigma0 <- Em+p0[plen-1]; Sigma1 <- Em+p0[plen]
@@ -416,7 +258,7 @@ bpACE <- bptwin <- function(formula, data, id, zyg, twinnum, DZ, weight=NULL,
     for (ii in vidx)
       val[ii] <- val[ii]*dmytr(p[ii])
 
-##    browser()
+    ##    browser()
     if (Bconstrain & Blen>0) {
       Bidx <- attributes(b00)$idx
       val[Bidx] <- as.numeric(val[Bidx]%*%attributes(b00)$D[Bidx,Bidx])
@@ -431,15 +273,23 @@ bpACE <- bptwin <- function(formula, data, id, zyg, twinnum, DZ, weight=NULL,
   }
 
 ###}}} Concordance model - Left Truncation/Delayed Entry
-  
-  
-  p0 <- rep(0,plen)
+ 
+ 
+  p0 <- rep(0,plen); p0[vidx] <- 1
   if (!is.null(control$start)) {
     p0 <- control$start
     control$start <- NULL
   } else {
-    g <- glm(Y~-1+X,family=binomial(probit))
+    g <- suppressWarnings(glm(Y~-1+X,family=binomial(probit)))
     p0[midx] <- coef(g)
+    if (Blen>0) {
+      pB <- p0[tail(midx,Blen)]
+      pB[1] <- ifelse(pB[1]<0,-2,log(pB[1]))
+      if (Blen>1) {
+        pB[seq_len(Blen-1)+1] <- -2
+      }
+      p0[tail(midx,Blen)] <- pB
+    }
   }
 
   if (!missing(p)) return(U(p,indiv=FALSE))
@@ -448,12 +298,13 @@ bpACE <- bptwin <- function(formula, data, id, zyg, twinnum, DZ, weight=NULL,
   f0 <- function(p) -sum(attributes(U(p))$logLik)
   g0 <- function(p) -as.numeric(U(p))
 
-  if (debug) browser()
 
   nlminbopt <- intersect(names(mycontrol),c("eval.max","iter.max","trace","abs.tol","rel.tol","x.tol","step.min"))
   ucminfopt <- intersect(names(mycontrol),c("trace","grtol","xtol","stepmax","maxeval","grad","gradstep","invhessian"))
   optimopt <- names(mycontrol)
-  
+
+  if (debug) browser()
+
   if (mycontrol$mle) {
     op <- switch(mycontrol$method,
                  ucminf=ucminf(p0,fn=f0,gr=g0,control=mycontrol[ucminfopt],hessian=F,...),
@@ -469,17 +320,15 @@ bpACE <- bptwin <- function(formula, data, id, zyg, twinnum, DZ, weight=NULL,
   }
   UU <- U(op$par,indiv=TRUE)
   I <- -numDeriv::jacobian(U,op$par)
-  tol <- 1e-12
+  tol <- 1e-15
+  V <- Inverse(I,tol)
+  sqrteig <- attributes(V)$sqrteig
+  J <- NULL
   if (robustvar) {
     J <- crossprod(UU)
-    iJ <- Inverse(J,tol)
-    sqrteig <- attributes(iJ)$sqrteig
-    V <- iJ%*%I%*%iJ
-  } else {
-    V <- Inverse(I,tol)
-    sqrteig <- attributes(V)$sqrteig
+    V <- V%*%J%*%V
   }
-  if (any(sqrteig<tol)) warning("Singular covariance matrix (pseudo-inverse used)")
+  if (any(sqrteig<tol)) warning("Near-singular covariance matrix (pseudo-inverse used)")
   
   cc <- cbind(op$par,sqrt(diag(V)))
   cc <- cbind(cc,cc[,1]/cc[,2],2*(1-pnorm(abs(cc[,1]/cc[,2]))))
@@ -498,18 +347,166 @@ bpACE <- bptwin <- function(formula, data, id, zyg, twinnum, DZ, weight=NULL,
   }
   rownames(cc) <- rnames
   S <- Sigma(op$par)
-  val <- list(coef=cc,vcov=V,score=UU,logLik=attributes(UU)$logLik,opt=op, Sigma0=S$Sigma0, Sigma1=S$Sigma1, call=mycall, N=N, data=data)
+  val <- list(coef=cc,vcov=V,score=UU,logLik=attributes(UU)$logLik,opt=op, Sigma0=S$Sigma0, Sigma1=S$Sigma1, call=mycall, N=N, data=data0, Blen=Blen, midx0=midx0, midx1=midx1, vidx0=vidx0, vidx1=vidx1, eqmean=eqmean, B=Bord,I=I,J=J)
   class(val) <- "bptwin"
   return(val)
 }
 
 ###}}} bpACE
 
+###{{{ bptwin methods
+
+plot.bptwin <- function(x,n=50,rg=range(x$B[,1]),xlab="Time",ylab="Concordance",...) {
+  require(mvtnorm)
+  if (x$Blen>0) {
+    ##    rg <- range(x$B[,1])
+    t <- seq(rg[1],rg[2],length.out=n)
+    B0 <- bs(t,degree=x$Blen)
+    b0. <- coef(x)[x$midx0,1,drop=FALSE]
+    b1. <- coef(x)[x$midx1,1,drop=FALSE]
+    b0 <- trMean(b0.,x$Blen)
+    b1 <- trMean(b1.,x$Blen)
+##    t <- x$B[,1]
+##    B0 <- x$B[,-1,drop=FALSE]    
+    b00 <- tail(b0,x$Blen)
+    b11 <- tail(b1,x$Blen)
+##    b00 <- b0.[-1]
+##    b11 <- b1.[-1]
+    pr0 <- sapply(as.numeric(B0%*%b00+b0[1]), function(z)
+                  pmvnorm(upper=rep(z,2),sigma=x$Sigma0))
+    pr1 <- sapply(as.numeric(B0%*%b11+b1[1]), function(z)
+                  pmvnorm(upper=rep(z,2),sigma=x$Sigma1))
+    plot(pr0~t,type="l", xlab=xlab, ylab=ylab,...)
+    lines(pr1~t,type="l",lty=2)
+  }
+  invisible(x)
+}
+
+sim <- function(x,...) UseMethod("sim")
+sim.bptwin <- function(x,n=100,p,...) {
+  browser()
+  return(x)
+}
+score <- function(x,...) UseMethod("score")
+score.bptwin <- function(x,indiv=FALSE,...) {
+  if (indiv) { s <- x$score; attributes(s)$logLik <- NULL; return(s) }
+  colSums(x$score)
+}
+logLik.bptwin <- function(object,indiv=FALSE,...) {
+  if (indiv) return(object$logLik)
+  n <- sum(object$N)/2
+  p <- nrow(coef(object))
+  loglik <- sum(object$logLik)
+  attr(loglik, "nall") <- n
+  attr(loglik, "nobs") <- n-p
+  attr(loglik, "df") <- p
+  class(loglik) <- "logLik"        
+  return(loglik)
+}
+vcov.bptwin <- function(object,...) object$vcov
+coef.bptwin <- function(object,...) object$coef
+print.bptwin <- function(x,...) {
+  printCoefmat(coef(x))
+  S <- colSums(x$score);  names(S) <- rep("",length(S))
+  cat("\n")
+  print(x$N)
+  cat("Score: "); cat(S);
+  cat("\nlogLik: "); cat(sum(x$logLik),"\n");
+}
+
+summary.bptwin <- function(object,level=0.05,...) {
+  trnam <- " "
+  vcoef1 <- paste("log(var(",c("A","C","D"),"))",sep="")
+  vcoef2 <- paste("log(var(",
+                  c(paste("U))","MZ",sep=trnam),
+                    paste("U))","DZ",sep=trnam)),sep="")
+  idx1 <- na.omit(match(vcoef1,rownames(coef(object))))
+  idx2 <- na.omit(match(vcoef2,rownames(coef(object))))
+  if (length(idx2)>0) {
+    idx <- idx2
+    mz <- multinomlogit(coef(object)[idx2[1]]); names(mz) <- c("U","E")
+    dz <- multinomlogit(coef(object)[idx2[2]]); names(dz) <- c("U","E")
+    cc <- c(mz[1],dz[1]) ##,mz[2],dz[2])
+    names(cc) <- c("Correlation MZ","Correlation DZ")
+    corMZ <- mz[1]; corDZ <- dz[1]
+    D <- (cbind(c(attributes(mz)$gradient[1],0),c(0,attributes(dz)$gradient[1])))
+    h <- function(x) 2*(x[1]-x[2])
+    dh <- function(x) c(2,-2)
+    i1 <- 1:2
+    corr <- NULL
+  }
+  if (length(idx1)>0) {
+    idx <- idx1
+    ACD <- match(rownames(coef(object))[idx1],vcoef1)
+    nn <- c(c("A","C","D")[ACD],"E")
+    dzsc <- c(1/2,1,1/4)[ACD]
+    cc <- multinomlogit(coef(object)[idx1,1]); names(cc) <- nn
+    D <- attributes(cc)$gradient
+    K <- length(ACD)
+    Ki <- seq_len(K)
+    corMZ <- sum(cc[Ki]); corDZ <- sum(cc[Ki]*dzsc)
+    i1 <- seq_len(length(dzsc))
+    h <- function(x) 2*(sum(x[i1])-sum(x[i1]*dzsc))
+    dh <- function(x) 2*(1-dzsc)    
+  }
+  V <- vcov(object)[idx,idx]
+  Vc <- D%*%V%*%t(D)
+  if (length(idx1)>0) {
+    b <- cbind(rep(1,K))
+    corMZ.sd <- (t(b)%*%Vc[Ki,Ki]%*%b)[1]^0.5
+    corDZ.sd <- (t(dzsc)%*%Vc[Ki,Ki]%*%dzsc)[1]^0.5    
+    corr <- rbind(c(corMZ,corMZ.sd),c(corDZ,corDZ.sd))
+    rownames(corr) <- c("Correlation MZ","Correlation DZ")
+  }
+  newcoef <- rbind(cbind(cc,diag(Vc)^0.5),corr); colnames(newcoef) <- c("Estimate","Std.Err")  
+  logit <- function(p) log(p/(1-p))
+  tigol <- function(z) 1/(1+exp(-z))
+  dlogit <- function(p) 1/(p*(1-p))
+  logith <- function(x) logit(h(x))
+  dlogith <- function(x) dlogit(h(x))*dh(x)
+  Dlh <- dlogith(cc[i1])
+  sdlh <- (t(Dlh)%*%Vc[i1,i1]%*%(Dlh))[1]^0.5
+  H <- h(cc[i1])
+  ci <- tigol(logith(cc[i1]) + qnorm(1-level/2)*c(-1,1)*sdlh)  
+  
+  concordance <-  conditional <- marg <- c()
+  mu <- coef(object)[c(object$midx0[1],object$midx1[1]),1,drop=TRUE]
+  Sigma <- list(object$Sigma0,object$Sigma1)
+  for (i in 1:2) {    
+    mu.cond <- function(x) mu+Sigma[[i]][1,2]/Sigma[[i]][2,2]*(x-mu[i])
+    var.cond <- Sigma[[i]][1,1]-Sigma[[i]][1,2]^2/Sigma[[i]][2,2]    
+    cc0 <- pmvnorm(upper=c(mu[i],mu[i]),sigma=Sigma[[i]])
+    px <- pnorm(mu[i],sd=Sigma[[i]][2,2]^0.5)
+    concordance <- c(concordance,cc0)
+    marg <- c(marg,px)
+    conditional <- c(conditional,cc0/px)
+  }
+  names(concordance) <- names(conditional) <- c("MZ","DZ")
+  hval <- rbind(c(H,ci)); colnames(hval) <- c("Estimate",paste(100*c(level/2,1-level/2),"%",sep="")); rownames(hval) <- "Heritability"  
+  res <- list(object=object, h=hval,
+              coef=newcoef, concordance=concordance, conditional=conditional)
+  class(res) <- "summary.bptwin"
+  res
+}
+
+print.summary.bptwin <- function(x,...) {
+  cat("\n")
+  print(x$object)
+  cat("\n")
+  print(x$coef)
+  cat("\nConcordance (MZ; DZ):\t\t", x$concordance,"\n")
+  cat("Case-wise concordance (MZ; DZ):\t", x$conditional,"\n\n")
+  print(x$h)
+  cat("\n")
+}
+
+###}}} bptwin methods
+
 ###{{{ bptwin0
 
 bptwin0 <- function(formula, data, id, zyg, twinnum, weight=NULL,
-                   control=list(trace=1), intercepts=ifelse(unique,2,1),
-                   epsilon=ifelse(unique,1,2), unique=TRUE, p,...) {
+                    control=list(trace=1), intercepts=ifelse(unique,2,1),
+                    epsilon=ifelse(unique,1,2), unique=TRUE, p,...) {
 
   mycall <- match.call()
 
@@ -539,7 +536,7 @@ bptwin0 <- function(formula, data, id, zyg, twinnum, weight=NULL,
   plen <- nx+1
   dS0 <- rbind(rep(1,4))
   dS1 <- dS0##rbind(dS0,c(1,0,0,1))
- 
+  
   mytr <- function(x) (x)  
   U <- function(p,group=1,indiv=FALSE) {
     if (group==1) {
@@ -593,13 +590,14 @@ bptwin0 <- function(formula, data, id, zyg, twinnum, weight=NULL,
     
     UU <- U(op$par,group=i,indiv=TRUE)
     J <- crossprod(UU)
-    iJ <- solve(J)
     U. <- function(p) U(p,group=i)
-    I <- -numDeriv::jacobian(U.,op$par)    
+    I <- -numDeriv::jacobian(U.,op$par)
+    iI <- solve(I)
     ##    I <- (I+t(I))/2
-    V <- iJ%*%I%*%iJ
-##    V <- iJ
-
+    V <- iI%*%J%*%iI
+    ##    V <- iJ
+    ##V <- solve(I)
+    
     cc <- cbind(op$par,sqrt(diag(V)))
     cc <- cbind(cc,cc[,1]/cc[,2],2*(1-pnorm(abs(cc[,1]/cc[,2]))))
     colnames(cc) <- c("Estimate","Std.Err","Z","p-value")
@@ -621,10 +619,10 @@ bptwin0 <- function(formula, data, id, zyg, twinnum, weight=NULL,
 ###{{{ bptwin1
 
 bptwin1 <- function(formula, data, id, zyg, twinnum, weight=NULL,
-                   control=list(trace=1), intercepts=ifelse(unique,2,1),
-                   epsilon=ifelse(unique,1,2), unique=TRUE, p,
-                   
-                   ...) {
+                    control=list(trace=1), intercepts=ifelse(unique,2,1),
+                    epsilon=ifelse(unique,1,2), unique=TRUE, p,
+                    
+                    ...) {
 
   mycall <- match.call()
   idtab <- table(data[,id])
@@ -700,13 +698,13 @@ bptwin1 <- function(formula, data, id, zyg, twinnum, weight=NULL,
     mu1 <- X1%*%B1
     Mu1 <- matrix(mu1,ncol=2,byrow=TRUE)
     U0 <- .Call("biprobit0",
-               Mu0,
+                Mu0,
                 Sigma0,dS0,Y0,XX0,W0,!is.null(W0),FALSE)
     U1 <- .Call("biprobit0",
                 Mu1,
                 Sigma1,dS1,Y1,XX1,W1,!is.null(W1),epsilon==2)
 
-##    browser()
+    ##    browser()
     if (indiv) {
       l <- c(U0$loglik,U1$loglik)
       val1 <- matrix(0,ncol=plen,nrow=(nrow(U0$score)))
@@ -722,11 +720,11 @@ bptwin1 <- function(formula, data, id, zyg, twinnum, weight=NULL,
     val[c(midx1,vidx1)] <- colSums(U0$score)
     l <- l+sum(U0$loglik)
     val[c(midx2,vidx2)] <- val[c(midx2,vidx2)] + colSums(U1$score)
-##    val[1:3] <- val[1:3] + colSums(U1$score)  
-#    val <- rep(0,length(p));    
-#    val[1:3] <- colSums(U0$score)
-##    val[c(3,5,6)] <- val[c(3,5,6)] + colSums(U1$score)
-#    val[c(4:6)] <- val[4:6] + colSums(U1$score)
+    ##    val[1:3] <- val[1:3] + colSums(U1$score)  
+                                        #    val <- rep(0,length(p));    
+                                        #    val[1:3] <- colSums(U0$score)
+    ##    val[c(3,5,6)] <- val[c(3,5,6)] + colSums(U1$score)
+                                        #    val[c(4:6)] <- val[4:6] + colSums(U1$score)
     l <- l+sum(U1$loglik)
     attributes(val)$logLik <- l
     return(val)
@@ -741,7 +739,7 @@ bptwin1 <- function(formula, data, id, zyg, twinnum, weight=NULL,
   
   f <- function(p) crossprod(U(p))[1]
   f0 <- function(p) -sum(attributes(U(p))$logLik)
-##  browser()
+  ##  browser()
   
   if (!is.null(control$simple)) {
     control$simple <- NULL
@@ -749,9 +747,9 @@ bptwin1 <- function(formula, data, id, zyg, twinnum, weight=NULL,
   } else {
     op <- nlminb(p0,f,control=control,...)
   }
-##  UU <- U(op$par,indiv=FALSE)
-##  res <- list(score=UU,logLik=sum(attributes(UU)$logLik),opt=op)
-##  return(res)
+  ##  UU <- U(op$par,indiv=FALSE)
+  ##  res <- list(score=UU,logLik=sum(attributes(UU)$logLik),opt=op)
+  ##  return(res)
 
   UU <- U(op$par,indiv=TRUE)
   J <- crossprod(UU)
@@ -783,6 +781,7 @@ bptwin1 <- function(formula, data, id, zyg, twinnum, weight=NULL,
 ###}}} bptwin
 
 ###{{{ bptwin.list methods
+
 summary.bptwin.list <- function(object,...) {
   concordance <- c()
   conditional <- c()
@@ -804,12 +803,13 @@ summary.bptwin.list <- function(object,...) {
 }
 
 print.bptwin.list <- function(x,...) summary(x,...)
+
 ###}}} bptwin.list methods
 
 ###{{{ biprobit
 
 biprobit <- function(formula, data, id, weight=NULL,
-                   control=list(trace=1), unique=TRUE, p,...) {
+                     control=list(trace=1), unique=TRUE, p,...) {
 
   mycall <- match.call()
   idtab <- table(data[,id])
@@ -885,15 +885,17 @@ biprobit <- function(formula, data, id, weight=NULL,
 ###{{{ utilities
 
 trMean <- function(b,blen) {
+##  mytr <- function(x) x^2; dmytr <- function(x) 2*x
+  mytr <- dmytr <- exp
   if (blen==0) return(b) 
   k <- length(b)
-    Bidx <- seq_len(blen)+(k-blen)
-  b[Bidx[1]] <- exp(b[Bidx[1]])
+  Bidx <- seq_len(blen)+(k-blen)
+  b[Bidx[1]] <- mytr(b[Bidx[1]])
   D <- diag(nrow=k)
   D[Bidx[1]:k,Bidx[1]] <- b[Bidx[1]]
   for (i in Bidx[-1]) {
-    D[i:k,i] <- exp(b[i])
-    b[i] <- b[i-1]+exp(b[i])
+    D[i:k,i] <- dmytr(b[i])
+    b[i] <- b[i-1]+mytr(b[i])
   }
   attributes(b)$D <- D
   attributes(b)$idx <- Bidx
@@ -908,7 +910,7 @@ multinomlogit <- function(x) {
   df <- c(ex,0)
   res <- f/sx
   dg <- -ex/sx^2   
-    gradient <- matrix(ncol=n,nrow=n+1)
+  gradient <- matrix(ncol=n,nrow=n+1)
   I <- diag(n+1)
   for (i in 1:(n)) {
     gradient[,i] <- df[i]*I[i,]/sx+dg[i]*f

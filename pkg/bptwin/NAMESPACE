@@ -8,7 +8,8 @@ export(
        bptwin,
        biprobit,
        sim,
-       score
+       score,
+       fastapprox       
 )
 
 S3method(sim, "bptwin")
