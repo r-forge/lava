@@ -5,7 +5,9 @@
   bptwin
 }
 \usage{
-bptwin(formula, data, id, zyg, twinnum, weight=NULL, ...)
+bptwin(formula, data, id, zyg, twinnum, DZ, weight = NULL, 
+    control = list(trace = 1), type = "ace", eqmean = TRUE, param = 0, 
+    robustvar = TRUE, p, debug = FALSE, ...) 
 }
 \arguments{
   \item{formula}{}
@@ -13,7 +15,15 @@ bptwin(formula, data, id, zyg, twinnum, weight=NULL, ...)
   \item{id}{}
   \item{zyg}{}
   \item{twinnum}{}
+  \item{DZ}{}
   \item{weight}{}
+  \item{control}{}
+  \item{type}{}
+  \item{eqmean}{}
+  \item{param}{}
+  \item{robustvar}{}
+  \item{p}{}
+  \item{debug}{}
   \item{\dots}{}
 }
 \value{
@@ -23,7 +33,7 @@ bptwin(formula, data, id, zyg, twinnum, weight=NULL, ...)
   bptwin
 }
 \seealso{
-  \code{twinlm}
+  The package \code{twinlm}.
 }
 \examples{
 \dontrun{

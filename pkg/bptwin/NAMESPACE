@@ -3,10 +3,18 @@ import(utils)
 import(stats)
 
 export(
+       plotcr,
+       cif,
+       prepcif,
+       simcif,
+       nonparcuminc,
+       splinebasis,
+       CondMom,
        bptwin,
        bptwin0,
        bptwin,
        biprobit,
+       bpnd,
        sim,
        score,
        fastapprox       
@@ -24,3 +32,8 @@ S3method(print, "summary.bptwin")
 S3method(summary, "bptwin.list")
 S3method(print, "bptwin.list")
        
+S3method(logLik,"cif")
+S3method(summary,"cif")
+S3method(print,"cif")
+S3method(plot,"cif")
+S3method(coef,"cif")
