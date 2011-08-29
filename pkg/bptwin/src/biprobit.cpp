@@ -16,7 +16,7 @@ mat logLik(mat &y, mat &mu, mat &Sigma) {
     if (y(i,1)==1) lo(1) *= -1;
     if (y(i,0)!=y(i,1)) mysign = -1;
     double R0 = R*mysign;
-    res(i) = log(bvnd(lo(0),lo(1),R0)); //bvnd calculates lower tail (mult.by -1).
+    res(i) = log(Sbvn(lo(0),lo(1),R0)); // calculates lower tail (mult.by -1).
   }
   return(res);
 }
@@ -65,7 +65,7 @@ vecmat score(mat &y, mat &x, mat &mu, mat &Sigma, mat &dS0, mat &w) {
     LR(0,1) = mysign*LR0(1,0); LR(1,0) = LR(0,1);
     r0 *= mysign;
     rowvec up = -lo;
-    double alpha = bvnd(lo(0),lo(1),r0);    
+    double alpha = Sbvn(lo(0),lo(1),r0);    
     vecmat D = Dbvn(up(0),up(1),r0);
     mat M = -LR*D.V;    
     mat V = alpha*S + LR*D.M*trans(LR);

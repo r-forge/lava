@@ -31,8 +31,8 @@ vecmat Dbvn(double y1, double y2, double R) {
   return(res);
 }
 
-double bvnd(double &u1, double &u2,double &r) {     
-  double val = bvnd_(&u1, &u2, &r);
+double Sbvn(double &l1, double &l2,double &r) {     
+  double val = bvnd_(&l1, &l2, &r);
   return(val);
 }
 

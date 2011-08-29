@@ -15,8 +15,8 @@ export(
        bptwin,
        biprobit,
        bpnd,
-       sim,
        score,
+       npc,
        fastapprox       
 )
 
@@ -32,6 +32,7 @@ S3method(print, "summary.bptwin")
 S3method(summary, "bptwin.list")
 S3method(print, "bptwin.list")
        
+S3method(predict,"cif")
 S3method(logLik,"cif")
 S3method(summary,"cif")
 S3method(print,"cif")
