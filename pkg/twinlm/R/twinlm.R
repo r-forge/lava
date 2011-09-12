@@ -248,6 +248,8 @@ print.twinlm <- function(x,...) {
 ###{{{ summary.twinlm
 
 summary.twinlm <- function(object,...) {
+    browser()
+
   e <- object$estimate
   zygtab <- with(object, table(data[,status]))
   theta <- pars(e)
@@ -393,7 +395,7 @@ summary.twinlm <- function(object,...) {
     constrain(e, as.formula(f)) <- function(x) L$linkfun(sum(x[genpos])^2/sum(x^2))
   }
   ci.logit <- L$linkinv(constraints(e)["h2",5:6])
-
+  
   h <- function(x) (x[1]^2)/(sum(x^2))
   dh <- function(x) {
     y <- x^2
