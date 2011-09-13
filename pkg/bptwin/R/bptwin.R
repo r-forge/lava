@@ -470,6 +470,7 @@ summary.bptwin <- function(object,level=0.05,...) {
   Dlh <- dlogith(cc[i1])
   sdlh <- (t(Dlh)%*%Vc[i1,i1]%*%(Dlh))[1]^0.5
   H <- h(cc[i1])
+  hstd <- t(dh(cc[i1]))%*%Vc[i1,i1]%*%dh(cc[i1])
   ci <- tigol(logith(cc[i1]) + qnorm(1-level/2)*c(-1,1)*sdlh)  
   
   concordance <-  conditional <- marg <- c()
@@ -485,7 +486,7 @@ summary.bptwin <- function(object,level=0.05,...) {
     conditional <- c(conditional,cc0/px)
   }
   names(concordance) <- names(conditional) <- c("MZ","DZ")
-  hval <- rbind(c(H,ci)); colnames(hval) <- c("Estimate",paste(100*c(level/2,1-level/2),"%",sep="")); rownames(hval) <- "Heritability"  
+  hval <- rbind(c(H,hstd^0.5,ci)); colnames(hval) <- c("Estimate","Std.Err",paste(100*c(level/2,1-level/2),"%",sep="")); rownames(hval) <- "Heritability"  
   res <- list(object=object, h=hval,
               coef=newcoef, concordance=concordance, conditional=conditional)
   class(res) <- "summary.bptwin"
