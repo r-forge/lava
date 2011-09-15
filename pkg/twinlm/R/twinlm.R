@@ -248,8 +248,6 @@ print.twinlm <- function(x,...) {
 ###{{{ summary.twinlm
 
 summary.twinlm <- function(object,...) {
-    browser()
-
   e <- object$estimate
   zygtab <- with(object, table(data[,status]))
   theta <- pars(e)
@@ -620,7 +618,7 @@ twinsim <- function(n=100,k1=c(),k2=1,mu=0,lambda=c(1,1,1),randomslope=NULL,type
   }
 
   sim.model1 <- model1
-  intfix(sim.model1,outcomes) <- mu
+##  intercept(sim.model1,outcomes) <- mu
   regfix(sim.model1,to=outcomes[1],from="a1") <- lambda[1]
   regfix(sim.model1,to=outcomes[2],from="a1") <- lambda[1]
   regfix(sim.model1,to=outcomes[1],from="c1") <- lambda[2]
@@ -642,7 +640,7 @@ twinsim <- function(n=100,k1=c(),k2=1,mu=0,lambda=c(1,1,1),randomslope=NULL,type
   intercept(sim.model1, latent(sim.model1)) <- 0
   
   sim.model2 <- model2
-  intfix(sim.model2,outcomes) <- mu
+##  intercept(sim.model2,outcomes) <- mu
   regfix(sim.model2,to=outcomes[1],from="a1") <- lambda[1]
   regfix(sim.model2,to=outcomes[2],from="a2") <- lambda[1]
   regfix(sim.model2,to=outcomes[1],from="c1") <- lambda[2]
@@ -669,7 +667,12 @@ twinsim <- function(n=100,k1=c(),k2=1,mu=0,lambda=c(1,1,1),randomslope=NULL,type
   }
 
   d1 <- sim(sim.model1,n=n,...)
+  d1$y1 <- d1$y1+mu
+  d1$y2 <- d1$y2+mu
   d2 <- sim(sim.model2,n=n,...)
+  d2$y1 <- d2$y1+mu
+  d2$y2 <- d2$y2+mu
+  
 
   d1$zyg <- "MZ"; d1$twinid <- 1:nrow(d1)
   d2$zyg <- "DZ"; d2$twinid <- 1:nrow(d2)  

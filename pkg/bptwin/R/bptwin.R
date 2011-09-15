@@ -1,6 +1,38 @@
 
+Dbvn <- function(p,design=function(p,...)
+                 return(list(mu=cbind(p[1],p[1]),
+                             S=matrix(c(p[2],p[3],p[3],p[4]),ncol=2),
+                             dS=rbind(c(1,0,0,0),c(0,1,1,0),c(0,0,0,1)))
+                        ),
+                        Y=cbind(1,1),X=cbind(1,1)) {
+  mS <- design(p)
+##  browser()
+  U0 <- with(mS,.Call("biprobit0",
+                          mu,
+                          S,dS,Y,X,NULL,FALSE));
+  return(c(U0,mS))
+}
 
+## reload <- function(...) {
+##   myfun <- "bicif"; pkg <- "bptwin/src/bptwin.so"
+##   if (is.loaded(myfun)) dyn.unload(pkg)
+##   library(numDeriv)
+##   library(mvtnorm)
+##   dyn.load(pkg)
+##   for (i in dir("bptwin/R/", pattern=glob2rx("*R"), full.names=TRUE)) { source(i) }
+## };## reload()
 
+## p <- c(0,c(1,0,1))
+## Dbvn(p)
+## fp <- function(p) Dbvn(p)$loglik[1]
+## sp <- function(p) with(Dbvn(p),score*exp(loglik[1]))
+## ##grad(fp,p)
+## gp <- function(p) with(Dbvn(p),pmvnorm(upper=c(0,0),mean=mu[1,],sigma=S))[1]
+## (gp(p)-gp(p+c(1,0,0,0)*1e-5))/1e-5
+## (gp(p)-gp(p+c(0,1,0,0)*1e-5))/1e-5
+## (gp(p)-gp(p+c(0,0,1,0)*1e-5))/1e-5
+## (gp(p)-gp(p+c(0,0,0,1)*1e-5))/1e-5
+## grad(gp,p,method="simple")
 
 ###{{{ bpACE/bptwin
 
@@ -13,7 +45,7 @@ bpACE <- bptwin <- function(formula, data, id, zyg, twinnum, DZ, weight=NULL,
                             eqmean=TRUE,
                             param=0,
                             robustvar=TRUE,                            
-                            p, debug=FALSE,...) {
+                            p, indiv=FALSE, debug=FALSE,...) {
 
 ###{{{ setup
 
@@ -295,7 +327,7 @@ bpACE <- bptwin <- function(formula, data, id, zyg, twinnum, DZ, weight=NULL,
     }
   }
 
-  if (!missing(p)) return(U(p,indiv=FALSE))
+  if (!missing(p)) return(U(p,indiv=indiv))
   
   f <- function(p) crossprod(U(p))[1]
   f0 <- function(p) -sum(attributes(U(p))$logLik)
