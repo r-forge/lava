@@ -1,15 +1,15 @@
 
 Dbvn <- function(p,design=function(p,...)
                  return(list(mu=cbind(p[1],p[1]),
+                             dmu=cbind(1,1),
                              S=matrix(c(p[2],p[3],p[3],p[4]),ncol=2),
                              dS=rbind(c(1,0,0,0),c(0,1,1,0),c(0,0,0,1)))
                         ),
-                        Y=cbind(1,1),X=cbind(1,1)) {
+                        Y=cbind(0,0)) {
   mS <- design(p)
-##  browser()
   U0 <- with(mS,.Call("biprobit0",
                           mu,
-                          S,dS,Y,X,NULL,FALSE));
+                          S,dS,Y,dmu,NULL,FALSE));
   return(c(U0,mS))
 }
 
@@ -161,7 +161,6 @@ bpACE <- bptwin <- function(formula, data, id, zyg, twinnum, DZ, weight=NULL,
   ##  mytr <- function(x) x^2; dmytr <- function(x) 2*x
   ##mytr <- function(z) 1/(1+exp(-z)); dmytr <- function(z) exp(-z)/(1+exp(-z))^2
   mytr <- exp; dmytr <- exp
-
   Sigma <- function(p0) {    
     p0[vidx] <- mytr(p0[vidx])    
     if (ACDU["u"]) {     
@@ -174,7 +173,7 @@ bpACE <- bptwin <- function(formula, data, id, zyg, twinnum, DZ, weight=NULL,
     return(list(Sigma0=Sigma0,Sigma1=Sigma1))
   }  
 
-###}}} setup
+###}}} setupx
   
 ###{{{ U  
 
@@ -382,7 +381,7 @@ bpACE <- bptwin <- function(formula, data, id, zyg, twinnum, DZ, weight=NULL,
   }
   rownames(cc) <- rnames
   S <- Sigma(op$par)
-  val <- list(coef=cc,vcov=V,score=UU,logLik=attributes(UU)$logLik,opt=op, Sigma0=S$Sigma0, Sigma1=S$Sigma1, call=mycall, N=N, data=data0, Blen=Blen, midx0=midx0, midx1=midx1, vidx0=vidx0, vidx1=vidx1, eqmean=eqmean, B=Bord,I=I,J=J)
+  val <- list(coef=cc,vcov=V,score=UU,logLik=attributes(UU)$logLik,opt=op, Sigma0=S$Sigma0, Sigma1=S$Sigma1, dS0=dS0, dS1=dS1, call=mycall, N=N, data=data0, Blen=Blen, midx0=midx0, midx1=midx1, vidx0=vidx0, vidx1=vidx1, eqmean=eqmean, B=Bord,I=I,J=J)
   class(val) <- "bptwin"
   return(val)
 }
