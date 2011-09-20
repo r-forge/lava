@@ -11,13 +11,15 @@
 \tabular{ll}{
 Package: \tab bptwin\cr
 Type: \tab Package\cr
-Version: \tab 0.3-0\cr
-Date: \tab 2011-07-25\cr
+Version: \tab 0.4-0\cr
+Date: \tab 2011-09-20\cr
 License: \tab GPL (>=2)\cr
 URL: http://r-forge.r-project.org/projects/lava/
 LazyLoad: \tab yes\cr
 }
 bptwin
+ipw
+cumh
 cif
 prepcif
 fastapprox
