@@ -581,7 +581,7 @@ twinsim <- function(n=100,k1=c(),k2=1,mu=0,lambda=c(1,1,1),randomslope=NULL,type
       regfix(model1, to=outcomes[2],from=a2var) <- covars.2[i]
       regfix(model1, to=outcomes[1],from=c1var) <- covars.1[i]
       regfix(model1, to=outcomes[2],from=c2var) <- covars.2[i]
-      randomslope(model1) <- c(covars.1[i],covars.2[i])
+      model1 <- randomslope(model1, covar=covars.1[i],covars.2[i])
       
       regfix(model2, to=a1var, from="a1",silent=TRUE) <- 1
       regfix(model2, to=a2var, from="a2",silent=TRUE) <- 1
@@ -593,7 +593,9 @@ twinsim <- function(n=100,k1=c(),k2=1,mu=0,lambda=c(1,1,1),randomslope=NULL,type
       regfix(model2, to=outcomes[2],from=a2var) <- covars.2[i]
       regfix(model2, to=outcomes[1],from=c1var) <- covars.1[i]
       regfix(model2, to=outcomes[2],from=c2var) <- covars.2[i]
-      randomslope(model2) <- c(covars.1[i],covars.2[i])
+      model2 <- randomslope(model2, covar=covars.1[i],covars.2[i])
+      
+##      randomslope.lvm(model2) <- c(covars.1[i],covars.2[i])
     }
   }
 

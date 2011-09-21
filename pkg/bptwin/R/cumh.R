@@ -31,16 +31,16 @@ Col <- function (col, alpha = 0.2) {
         alpha))))
 }
 
-plot.cumh <- function(x,...,idx=seq(nrow(x$ht)),lwd=2,col,ylim=c(0,1),xlab="Time",ylab="Heritability",add=FALSE) {
+plot.cumh <- function(x,...,idx=seq(nrow(x$ht)),lwd=2,col,ylim=c(0,1),xlab="Time",ylab="Heritability",add=add) {
 
   if (!add) {
-    plot(res$ht[idx,1:2,drop=FALSE],type="l",ylim=ylim,lwd=lwd,
+    plot(x$ht[idx,1:2,drop=FALSE],type="l",ylim=ylim,lwd=lwd,
          ylab=ylab,xlab=xlab,...)
   }
   if (missing(col)) col <- Col("darkblue")
-  xx <- with(res, c(ht[idx,1],rev(ht[idx,1])))
-  yy <- with(res, c(ht[idx,4],rev(ht[idx,5])))           
+  xx <- with(x, c(ht[idx,1],rev(ht[idx,1])))
+  yy <- with(x, c(ht[idx,4],rev(ht[idx,5])))           
   polygon(xx,yy,col=col)
-  lines(res$ht[idx,1:2,drop=FALSE],lwd=lwd,...)
+  lines(x$ht[idx,1:2,drop=FALSE],lwd=lwd,...)
   invisible(x)
 }
