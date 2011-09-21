@@ -7,6 +7,8 @@ export(
        cif,
        prepcif,
        simcif,
+       cumh,
+       ipw,
        nonparcuminc,
        splinebasis,
        CondMom,
@@ -28,6 +30,11 @@ S3method(coef, "bptwin")
 S3method(print, "bptwin")
 S3method(summary, "bptwin")
 S3method(print, "summary.bptwin")
+
+S3method(plot, "cumh")
+S3method(summary, "cumh")
+S3method(print, "cumh")
+
 
 S3method(summary, "bptwin.list")
 S3method(print, "bptwin.list")

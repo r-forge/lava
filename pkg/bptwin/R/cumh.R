@@ -21,6 +21,8 @@ cumh <- function(formula,data,...,time,timestrata=seq(55,100,length=10),
   res
 }
 
+summary.cumh <- function(object,...) object 
+  
 print.cumh <- function(x,...) {
   print(x$ht)
   invisible(x)
