@@ -4,7 +4,7 @@ Dbvn <- function(p,design=function(p,...)
                              dmu=cbind(1,1),
                              S=matrix(c(p[2],p[3],p[3],p[4]),ncol=2),
                              dS=rbind(c(1,0,0,0),c(0,1,1,0),c(0,0,0,1)))
-                        ),
+                        ),                 
                         Y=cbind(0,0)) {
   mS <- design(p)
   U0 <- with(mS,.Call("biprobit0",
@@ -36,16 +36,19 @@ Dbvn <- function(p,design=function(p,...)
 
 ###{{{ bpACE/bptwin
 
-bpACE <- bptwin <- function(formula, data, id, zyg, twinnum, DZ, weight=NULL,
-                            truncweight=NULL,
-                            entry=NULL, time,
-                            B=NULL, degree=1, Bconstrain=TRUE,
-                            control=list(trace=1),
-                            type="ace",
-                            eqmean=TRUE,
-                            param=0,
-                            robustvar=TRUE,                            
-                            p, indiv=FALSE, debug=FALSE,...) {
+bptwin <- function(formula, data, id, zyg, twinnum, DZ, weight=NULL,
+                   truncweight=NULL,
+                   entry=NULL, time,
+                   B=NULL, degree=1, Bconstrain=TRUE,
+                   control=list(trace=1),
+                   type="ace",
+                   eqmean=TRUE,
+                   param=0,
+                   stderr=TRUE,
+                   robustvar=TRUE,                   
+                   p, indiv=FALSE,
+                   constrain,
+                   debug=FALSE,...) {
 
 ###{{{ setup
 
@@ -327,15 +330,32 @@ bpACE <- bptwin <- function(formula, data, id, zyg, twinnum, DZ, weight=NULL,
   }
 
   if (!missing(p)) return(U(p,indiv=indiv))
-  
+
   f <- function(p) crossprod(U(p))[1]
   f0 <- function(p) -sum(attributes(U(p))$logLik)
   g0 <- function(p) -as.numeric(U(p))
 
+  if (!missing(constrain)) {
+    freeidx <- is.na(constrain)
+    f <- function(p) {      
+      p1 <- constrain; p1[freeidx] <- p
+      res <- U(p1)[freeidx]
+      crossprod(res)[1]
+    }
+    f0 <- function(p) {
+      p1 <- constrain; p1[freeidx] <- p
+      -sum(attributes(U(p1))$logLik)
+    }
+    g0 <- function(p) {
+      p1 <- constrain; p1[freeidx] <- p
+      -as.numeric(U(p1)[freeidx])
+    }
+    p0 <- p0[is.na(constrain)]    
+  }
 
   nlminbopt <- intersect(names(mycontrol),c("eval.max","iter.max","trace","abs.tol","rel.tol","x.tol","step.min"))
   ucminfopt <- intersect(names(mycontrol),c("trace","grtol","xtol","stepmax","maxeval","grad","gradstep","invhessian"))
-  optimopt <- names(mycontrol)
+  optimopt <- names(mycontrol) 
 
   if (debug) browser()
 
@@ -352,18 +372,26 @@ bpACE <- bptwin <- function(formula, data, id, zyg, twinnum, DZ, weight=NULL,
     ##  op <- nlm(f,p0,print.level=2)
     ##  op <- spg(p0,f,control=control,...)
   }
-  UU <- U(op$par,indiv=TRUE)
-  I <- -numDeriv::jacobian(U,op$par)
-  tol <- 1e-15
-  V <- Inverse(I,tol)
-  sqrteig <- attributes(V)$sqrteig
-  J <- NULL
-  if (robustvar) {
-    J <- crossprod(UU)
-    V <- V%*%J%*%V
+
+  if (stderr) {
+    UU <- U(op$par,indiv=TRUE)
+    I <- -numDeriv::jacobian(U,op$par)
+    tol <- 1e-15
+    V <- Inverse(I,tol)
+    sqrteig <- attributes(V)$sqrteig
+    J <- NULL
+    if (robustvar) {
+      J <- crossprod(UU)
+      V <- V%*%J%*%V
+    }
+    if (any(sqrteig<tol)) warning("Near-singular covariance matrix (pseudo-inverse used)")
+  } else {
+    UU <- matrix(NA,ncol=length(op$par),nrow=1)
+    I <- J <- V <- matrix(NA,ncol=length(op$par),nrow=length(op$par))
   }
-  if (any(sqrteig<tol)) warning("Near-singular covariance matrix (pseudo-inverse used)")
-  
+    
+  browser()
+
   cc <- cbind(op$par,sqrt(diag(V)))
   cc <- cbind(cc,cc[,1]/cc[,2],2*(1-pnorm(abs(cc[,1]/cc[,2]))))
   colnames(cc) <- c("Estimate","Std.Err","Z","p-value")
@@ -379,6 +407,7 @@ bpACE <- bptwin <- function(formula, data, id, zyg, twinnum, DZ, weight=NULL,
   } else {
     rnames <- c(rnames1,c("log(var(A))","log(var(C))","log(var(D))")[ACDU[1:3]])
   }
+  if (!missing(constrain)) rnames <- rnames[freeidx]
   rownames(cc) <- rnames
   S <- Sigma(op$par)
   val <- list(coef=cc,vcov=V,score=UU,logLik=attributes(UU)$logLik,opt=op, Sigma0=S$Sigma0, Sigma1=S$Sigma1, dS0=dS0, dS1=dS1, call=mycall, N=N, data=data0, Blen=Blen, midx0=midx0, midx1=midx1, vidx0=vidx0, vidx1=vidx1, eqmean=eqmean, B=Bord,I=I,J=J)
@@ -966,6 +995,7 @@ Inverse <- function(X,tol=1e-9) {
   id0[svdX$d>tol] <- 1/svdX$d[svdX$d>tol]
   res <- with(svdX, v%*%diag(id0)%*%t(u))
   attributes(res)$sqrteig <- svdX$d
+  attributes(res)$warning <- any(svdX$d<tol)
   return(res)
 }
 

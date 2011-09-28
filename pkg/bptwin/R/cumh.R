@@ -1,5 +1,6 @@
-cumh <- function(formula,data,...,time,timestrata=seq(55,100,length=10),
-               silent=FALSE) { 
+cumh <- function(formula,data,...,time,
+                 timestrata=quantiles(data[,time],c(0.25,0.5,0.75,1)),
+                 silent=FALSE) { 
   res <- list(); i <- 0
   ht <- c()
   outcome <- as.character(terms(formula)[[2]])
@@ -33,16 +34,17 @@ Col <- function (col, alpha = 0.2) {
         alpha))))
 }
 
-plot.cumh <- function(x,...,idx=seq(nrow(x$ht)),lwd=2,col,ylim=c(0,1),xlab="Time",ylab="Heritability",add=add) {
+plot.cumh <- function(x,...,idx=seq(nrow(x$ht)),lwd=2,col,fillcol,alpha=0.2,ylim=c(0,1),xlab="Time",ylab="Heritability",add=FALSE) {
 
+  if (missing(col)) col <- "darkblue"
+  if (alpha>0 & missing(fillcol)) fillcol <- Col(col,alpha)
   if (!add) {
     plot(x$ht[idx,1:2,drop=FALSE],type="l",ylim=ylim,lwd=lwd,
-         ylab=ylab,xlab=xlab,...)
+         ylab=ylab,xlab=xlab,col=col,...)
   }
-  if (missing(col)) col <- Col("darkblue")
   xx <- with(x, c(ht[idx,1],rev(ht[idx,1])))
   yy <- with(x, c(ht[idx,4],rev(ht[idx,5])))           
-  polygon(xx,yy,col=col)
-  lines(x$ht[idx,1:2,drop=FALSE],lwd=lwd,...)
+  polygon(xx,yy,col=fillcol)
+  lines(x$ht[idx,1:2,drop=FALSE],lwd=lwd,col=col,...)
   invisible(x)
 }
