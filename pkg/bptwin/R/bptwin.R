@@ -1,4 +1,3 @@
-
 Dbvn <- function(p,design=function(p,...)
                  return(list(mu=cbind(p[1],p[1]),
                              dmu=cbind(1,1),
@@ -390,7 +389,6 @@ bptwin <- function(formula, data, id, zyg, twinnum, DZ, weight=NULL,
     I <- J <- V <- matrix(NA,ncol=length(op$par),nrow=length(op$par))
   }
     
-  browser()
 
   cc <- cbind(op$par,sqrt(diag(V)))
   cc <- cbind(cc,cc[,1]/cc[,2],2*(1-pnorm(abs(cc[,1]/cc[,2]))))
