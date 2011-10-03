@@ -390,7 +390,8 @@ summary.twinlm <- function(object,...) {
                              genpos <- c(genpos,pos) }
     if ("e1"%in%latent(e)) { varcomp <- c(varcomp,"lambda[e]"); pos <- pos+1 }
     f <- paste("h2~",paste(varcomp,collapse="+"))
-    constrain(e, as.formula(f)) <- function(x) L$linkfun(sum(x[genpos])^2/sum(x^2))
+
+    constrain(e, as.formula(f)) <- function(x) L$linkfun(sum(x[genpos]^2)/sum(x^2))
   }
   ci.logit <- L$linkinv(constraints(e)["h2",5:6])
   
