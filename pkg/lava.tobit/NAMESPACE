@@ -12,6 +12,7 @@ export(
        tobitw_gradient.lvm,
        tobitw_hessian.lvm,
        clprobit,
+       plotres,
        lava.tobit.init.hook,
        lava.tobit.estimate.hook,
        lava.tobit.color.hook,
