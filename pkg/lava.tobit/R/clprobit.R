@@ -1,4 +1,4 @@
-clprobit <- cc <- function(x,data,k=2,type=c("nearest","all"),pairlist,silent=TRUE,
+clprobit <- function(x,data,k=2,type=c("nearest","all"),pairlist,silent=TRUE,
                      ...) {
   y <- endogenous(x)
   binsurv <- rep(FALSE,length(y))
