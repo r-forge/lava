@@ -1,4 +1,4 @@
-clprobit <- function(x,data,k=2,type=c("nearest","all"),pairlist,silent=TRUE,
+clprobit <- cc <- function(x,data,k=2,type=c("nearest","all"),pairlist,silent=TRUE,
                      ...) {
   y <- endogenous(x)
   binsurv <- rep(FALSE,length(y))
@@ -8,9 +8,16 @@ clprobit <- function(x,data,k=2,type=c("nearest","all"),pairlist,silent=TRUE,
   }
   
   binsurv <- unique(c(y[binsurv],binary(x)))
-  binsurvpos <- which(colnames(data)%in%binsurv)
-  if (length(binsurv)<(k+1)) stop("No need for composite likelihood analysis.")
+  ##  binsurvpos <- which(colnames(data)%in%binsurv)
+  if (!missing(pairlist)) {
+    binsurvpos <- which(colnames(data)%in%endogenous(x))
+  } else {
+    binsurvpos <- which(colnames(data)%in%binsurv)
+  }
+  
   if (missing(pairlist)) {
+    if (length(binsurv)<(k+1)) stop("No need for composite likelihood analysis.")
+
     if (type[1]=="all") {
       mypar <- combn(length(binsurv),k) ## all pairs (or multiplets), k=2: k*(k-1)/2
     } else {
@@ -20,7 +27,13 @@ clprobit <- function(x,data,k=2,type=c("nearest","all"),pairlist,silent=TRUE,
     mypar <- pairlist
   }  
 
-  nblocks <- ncol(mypar)
+  if (is.matrix(mypar)) {
+    mypar0 <- mypar; mypar <- c()
+    for (i in seq(ncol(mypar0)))
+      mypar <- c(mypar, list(mypar0[,i]))
+  }
+  
+  nblocks <- length(mypar)
   mydata0 <- data[c(),,drop=FALSE]  
   mydata <-  as.data.frame(matrix(NA, nblocks*nrow(data), ncol=ncol(data)))
   names(mydata) <- names(mydata0)
@@ -38,7 +51,7 @@ clprobit <- function(x,data,k=2,type=c("nearest","all"),pairlist,silent=TRUE,
   
   for (ii in 1:nblocks) {    
     data0 <- data;
-    for (i in binsurvpos[-mypar[,ii]]) {
+    for (i in binsurvpos[-mypar[[ii]]]) {
       if (is.Surv(data[,i])) {
         S <- data0[,i]; S[,1] <- NA
         data0[,i] <- S
@@ -50,10 +63,11 @@ clprobit <- function(x,data,k=2,type=c("nearest","all"),pairlist,silent=TRUE,
     mydata[(1:nrow(data))+(ii-1)*nrow(data),] <- data0
 ##    mydata <- rbind(mydata,data0)
   }
-  
+
   suppressWarnings(e0 <- estimate(x,data=mydata,missing=TRUE,silent=silent,
               ...))
-  S <- score(e0$estimate,indiv=TRUE)
+
+  S <- score(e0,indiv=TRUE)
   nd <- nrow(data)
   block1 <- which((1:nd)%in%(rownames(S)))
   blocks <- sapply(1:nblocks, function(x) 1:length(block1)+length(block1)*(x-1))
@@ -76,3 +90,4 @@ score.clprobit <- function(x,indiv=FALSE,...) {
     return(colSums(x$iidscore))
   x$iidscore
 }
+
