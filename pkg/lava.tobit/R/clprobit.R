@@ -53,7 +53,7 @@ clprobit <- function(x,data,k=2,type=c("nearest","all"),pairlist,silent=TRUE,
   
   suppressWarnings(e0 <- estimate(x,data=mydata,missing=TRUE,silent=silent,
               ...))
-  S <- score(e0,indiv=TRUE)
+  S <- score(e0$estimate,indiv=TRUE)
   nd <- nrow(data)
   block1 <- which((1:nd)%in%(rownames(S)))
   blocks <- sapply(1:nblocks, function(x) 1:length(block1)+length(block1)*(x-1))
