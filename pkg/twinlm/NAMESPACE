@@ -4,7 +4,8 @@ import(stats)
 
 export(
        twinlm,
-       twinsim       
+       twinsim,
+       acde      
        )
 
 
@@ -16,6 +17,7 @@ S3method(print, summary.twinlm)
 S3method(plot, twinlm)
 S3method(compare, twinlm)
 S3method(vcov, twinlm)
+S3method(acde, twinlm)
 S3method(print, summary.twinlm)
 S3method(model.frame, twinlm)
 

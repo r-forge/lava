@@ -1,3 +1,4 @@
+
 ###{{{ twinlm
 
 twinlm <- function(formula, data, type=c("ace"), twinid="id", status="zyg", DZ, twinnum="twinnum",weight=NULL,binary=FALSE,probitscale=1,keep=weight,estimator="gaussian",...) {
@@ -702,3 +703,23 @@ twinsim <- function(n=100,k1=c(),k2=1,mu=0,lambda=c(1,1,1),randomslope=NULL,type
 }
 
 ###}}}
+
+###{{{ acde
+
+"acde" <- function(x,...) UseMethod("acde")
+acde.twinlm <- function(x,...) {
+  m <- x$estimate$model$lvm[[1]]
+  lambdas <- c("lambda[a]","lambda[c]","lambda[d]","lambda[e]")
+  ACDE <- lambdas%in%as.vector(m$par)
+  lcur <- lambdas[ACDE]
+  for (l in lcur) {
+    pos <- which(lcur%in%l)
+    par <- substr(strsplit(l,"[",fixed=TRUE)[[1]][2],1,1)
+    f <- as.formula(paste(par,"~",paste(lcur,collapse="+")))
+    myfun <- eval(parse(text=paste("function(x) x[",pos,"]^2/sum(x^2)")))
+    constrain(x$estimate,f) <- myfun ##function(x) x[get("pos")]^2/sum(x^2)
+  }
+  constraints(x$estimate)
+}
+
+###}}} acde
