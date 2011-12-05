@@ -1,4 +1,4 @@
-bicomprisk <- function(formula, data, cause=c(1,1), cens=0, causes, indiv, strata=NULL, id,num,prodlim=TRUE,messages=TRUE,...) {
+bicomprisk <- function(formula, data, cause=c(1,1), cens=0, causes, indiv, strata=NULL, id,num,prodlim=FALSE,messages=TRUE,...) {
   mycall <- match.call()
   formulaId <- Specials(formula,"id")
   formulaIndiv <- Specials(formula,"indiv")
@@ -50,7 +50,7 @@ bicomprisk <- function(formula, data, cause=c(1,1), cens=0, causes, indiv, strat
 
   covars <- as.character(attributes(terms(formula))$variables)[-(1:2)]
   indiv <- indiv2 <- covars2 <- NULL
-  suppressMessages(browser())
+  ##  suppressMessages(browser())
   
   
   data <- data[order(data[,id]),]

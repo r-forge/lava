@@ -18,7 +18,7 @@ export(
        biprobit,
        bpnd,
        npc,
-       bicomprisk
+       bicomprisk,
        fastapprox       
 )
 
@@ -38,6 +38,7 @@ S3method(coef, "biprobit.strata")
 S3method(summary, "biprobit.strata")
 S3method(logLik, "biprobit.strata")
 S3method(score, "biprobit.strata")
+S3method(plot, "biprobit.strata")
 
 
 S3method(plot, "cumh")
