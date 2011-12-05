@@ -1,6 +1,12 @@
 cumh <- function(formula,data,...,time,
-                 timestrata=quantiles(data[,time],c(0.25,0.5,0.75,1)),
-                 silent=FALSE) { 
+                 timestrata=quantile(data[,time],c(0.25,0.5,0.75,1)),
+                 cumulative=TRUE,
+                 silent=FALSE) {
+  
+  time.  <- substitute(time)
+  if (!is.character(time.)) time. <- deparse(time.)
+  time <- time.
+  
   res <- list(); i <- 0
   ht <- c()
   outcome <- as.character(terms(formula)[[2]])
@@ -8,11 +14,23 @@ cumh <- function(formula,data,...,time,
   for (i in seq(length(timestrata))) {
     t <- timestrata[i]
     data[,outcome] <- y0
-    data[,outcome] <- data[,outcome]*(data[,time]<t)
-    if (!silent) {
-      message(t," ",sum(data[,outcome]))
+    newdata <- data
+    if (!cumulative) {
+      if (i==1) {
+        idx <- data[,time]<t
+      } else {
+        idx <- (timestrata[i-1]<=data[,time] & data[,time]<t)
+      }
+    } else {
+      data[,outcome] <- data[,outcome]*(data[,time]<t)
     }
-    res[[i]] <-bptwin(formula,data=data,...)
+    if (!silent) {
+      message(t)##," ",sum(data[,outcome]))
+    }
+    if (!cumulative)
+      res[[i]] <-bptwin(formula,data=data[idx,],...)
+    else
+      res[[i]] <-bptwin(formula,data=data,...)
     ht <- rbind(ht,c(t,summary(res[[i]])$h))
   }
   rownames(ht) <- timestrata

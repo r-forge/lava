@@ -1,17 +1,26 @@
-ipw <- function(formula,data,cluster,samecens=TRUE,obsonly=TRUE,weightname="w",
-                pairs=TRUE) {
-  require(rms)
-  fit <- cph(formula,data=data,surv=TRUE,x=TRUE,y=TRUE)
+ipw <- function(formula,data,cluster,samecens=FALSE,obsonly=TRUE,weightname="w",
+                pairs=FALSE,response) {
+
   timevar <- as.character(terms(formula)[[2]][[2]])
   otimes <- data[,timevar]
   utimes <- sort(unique(otimes))
   delta <- min(diff(c(0,utimes)))/2 ## We want prediction just before event
-  pr <- survest(fit,what="parallel",newdata=data,times=otimes-delta)
+  pr <- c()
+##  if (length(attributes(terms(formula))$term.labels)) {    
+##    fit <- cph(formula,data=data,surv=TRUE,x=TRUE,y=TRUE)
+##    pr <- survest(fit,what="parallel",newdata=data,
+##                    times=otimes-delta)
+##  } else { ## cph does not work without covariates.. Kaplan-Meier:
+  fit <- survfit(formula,data=data);
+  Gfit <- cbind(fit$time,fit$surv)
+  pr <- fastapprox(Gfit[,1],otimes-delta,Gfit[,2])[[1]]
+##  }
+  noncens <- with(data,!eval(terms(formula)[[2]][[3]]))
+  data[,weightname] <- pr  
   if (samecens & !missing(cluster)) {
-    noncens <- with(data,!eval(terms(formula)[[2]][[3]]))
-    data[,weightname] <- pr
-    data <- data[noncens,,drop=FALSE]
-    data <- data[order(data[,cluster]),,drop=FALSE]
+    message("Minimum weights...")
+    myord <- order(data[,cluster])
+    data <- data[myord,,drop=FALSE]
     id <-  table(data[,cluster])
     if (pairs) {
       gem <- data[,cluster]%in%(names(id)[id==2])
@@ -19,12 +28,34 @@ ipw <- function(formula,data,cluster,samecens=TRUE,obsonly=TRUE,weightname="w",
       data <- data[gem,]
     }
     d0 <- subset(data,select=c(cluster,weightname))
+    noncens <- with(data,!eval(terms(formula)[[2]][[3]]))
+    d0[,"observed."] <- noncens
     timevar <- paste("_",cluster,weightname,sep="")
     d0[,timevar] <- unlist(lapply(id,seq))
-    W <- apply(reshape(d0,direction="wide",timevar=timevar,idvar=cluster),1,
+    Wide <- reshape(d0,direction="wide",timevar=timevar,idvar=cluster)
+    W <- apply(Wide[,paste(weightname,1:2,sep=".")],1,
                function(x) min(x,na.rm=TRUE))
-    data[,weightname] <- 1/rep(W,id)
-    return(data)
-  }
-  return(pr)
+    Wmarg <- d0[,weightname]
+    data[,weightname] <- 1/Wmarg
+    Wmin <- rep(W,id)
+    ##    d0[,weightname] <- 0
+
+##################################################
+############################################################
+##################################################
+
+    ##      Wcomb <- (Wmin-Wmarg)/(Wmarg*Wmin)      
+    obs1only <- rep(with(Wide, observed..1 & (is.na(observed..2) | !observed..2)),id)
+    obs2only <- rep(with(Wide, observed..2 & (is.na(observed..1) | !observed..1)),id)
+    obsOne <- which(na.omit(obs1only|obs2only))
+    obsBoth <- rep(with(Wide, !is.na(observed..1) & !is.na(observed..2) & observed..2 & observed..1),id)
+
+    data[obsBoth,weightname] <-
+      ifelse(noncens[obsBoth],1/Wmin[obsBoth],0)    
+    data[obsOne,weightname] <-
+      ifelse(noncens[obsOne],1/Wmarg[obsOne],0)
+  } 
+  if (obsonly)
+    data <- data[noncens,,drop=FALSE]
+  return(data)    
 }

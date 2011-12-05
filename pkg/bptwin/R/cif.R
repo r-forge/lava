@@ -1,19 +1,21 @@
 ###{{{ cif
 
-cif <- function(t,X,start,knots,degree=1,theta,control=list(trace=1),
-                ppar="prob",vpar="block",cpp="bicif",...) {
+cif <- function(t,X=NULL,Z=NULL,start,knots,degree=1,theta,control=list(trace=1),
+                ppar="prob",vpar="block",hessian=FALSE,cpp="bicif",...) {
   PP <- prepcif(t,d=degree,knots=knots)
   ppar <- paste(ppar,"cif.ppar",sep="_")
   vpar <- paste(vpar,"cif.vpar",sep="_")
+  nx <- ifelse(is.null(X),0,ncol(X))
+
   loglik <- function(theta,d=degree,knots=knots,...) {
-    with(PP, logLikcif(theta,t=t,B=B,dB=dB,K=K,causes=causes,ncauses=ncauses,tB=tB,d=d,idx=idx,neg=TRUE,ppar=ppar,vpar=vpar,cpp=cpp,...))
+    with(PP, logLikcif(theta,X1=X,X2=X,Z=Z,t=t,B=B,dB=dB,K=K,causes=causes,ncauses=ncauses,tB=tB,d=d,idx=idx,neg=TRUE,ppar=ppar,vpar=vpar,cpp=cpp,...))
   }
   if (PP$dim==1) {
     loglik <- function(theta,d=degree,knots=knots,...) {
-      with(PP, logLikcif1(theta,t=t,B=B,dB=dB,K=K,causes=causes,ncauses=ncauses,tB=tB,d=d,idx=idx,neg=TRUE,ppar=ppar,vpar=vpar,...))
+      with(PP, logLikcif1(theta,X1=X,X2=X,Z=Z,t=t,B=B,dB=dB,K=K,causes=causes,ncauses=ncauses,tB=tB,d=d,idx=idx,neg=TRUE,ppar=ppar,vpar=vpar,...))
     }
     if (missing(start)) {
-      npar <- with(PP, ncol(B)*ncauses+ncauses-1)
+      npar <- with(PP, ncol(B)*ncauses+ncauses-1+nx*ncauses)
       start <- rep(0,npar)
     }
   } else {
@@ -24,8 +26,9 @@ cif <- function(t,X,start,knots,degree=1,theta,control=list(trace=1),
       ##                                start=TRUE)),
       ##              rep(0,do.call(ppar,list(theta=NULL,ncauses=ncauses)))),0,0,0)
       npar <- with(PP, ncol(B)*ncauses+
-                   do.call(vpar,list(theta=NULL,ncauses=ncauses))+
-                   do.call(ppar,list(theta=NULL,ncauses=ncauses)))
+                   do.call(vpar,list(theta=NULL,ncauses=ncauses)) +
+                   do.call(ppar,list(theta=NULL,ncauses=ncauses))) +
+                     PP$ncauses*nx
       start <- rep(0,npar)
       
     }
@@ -34,14 +37,16 @@ cif <- function(t,X,start,knots,degree=1,theta,control=list(trace=1),
   if (!missing(theta)) return(loglik(theta,...))
   opt <- nlminb(start,loglik,control=control)
   res <- c(list(coef=opt$par, opt=opt,
-                ppar=ppar,vpar=vpar),
+                ppar=ppar,vpar=vpar,X=X,Z=Z),
            PP)
   class(res) <- "cif"
   ll <- function(p,...) logLik(res,theta=p,...)
-  ##  H <- -hessian(ll,coef(res))
-  ##  res$information <- H
+  if (hessian) {
+    H <- -hessian(ll,coef(res))
+    res$information <- H
+  }
   l0 <- ll(coef(res),info=TRUE)
-  res <- c(res, list(Sigma=l0$Sigma, b=l0$b, P=l0$P, P1=rowSums(as.matrix(l0$P))))
+  res <- c(res, list(Sigma=l0$Sigma, b=l0$b, b1=l0$b1, P=l0$P, P1=rowSums(as.matrix(l0$P))))
   class(res) <- "cif"
   return(res)
 
@@ -99,8 +104,8 @@ predict.cif <- function(object,cause=c(1,1),t,...) {
   if (missing(t)) t <- seq(min(l$a[,1]),max(l$a[,1]),length.out=100)
 
   B <- splinebasis(t,knots=object$knots,degree=object$d,Boundary.knots=object$K[c(1,length(object$K))])
-  a <- cbind(t,B%*%l$b[[1]],B%*%l$b[[2]])
-  
+  a <- cbind(t,B%*%l$b[[cause[1]]],B%*%l$b[[cause[2]]])
+
   if (object$dim & length(cause)==2) {
     idx <- c((cause[1]-1)*2+1,(cause[2]-1)*2+2)
     S <- object$Sigma[idx,idx]
@@ -121,6 +126,7 @@ print.cif <- function(x,...) {
   cat("\nVariance:\n"); print(x$Sigma)
   cat("\nCure-rates:\n"); print(x$P)
   cat("\nParameters:\n"); print(x$b)
+  cat("\nMean parameters:\n"); print(x$b1)
   return(invisible(x))
 }
 summary.cif <- function(object,...) object
@@ -129,18 +135,53 @@ summary.cif <- function(object,...) object
 
 ###{{{ plot.cif
 
-plot.cif <- function(x,col=c("seagreen","darkred","darkblue","goldenrod","mediumpurple"),curerate=TRUE,...) {
+plot.cif <- function(x,col=c("seagreen","darkred","darkblue","goldenrod","mediumpurple"),curerate=TRUE,cause,nonpar=TRUE,...) {  
+  dots <- list(...)
+  if (is.null(dots$xlim)) dots$xlim <- range(x$t[,1:2])
+  if (is.null(dots$ylim)) dots$ylim <- c(0,1)
+  if (is.null(dots$xlab)) dots$xlab <- "Time"
+  if (is.null(dots$ylab)) dots$ylab <- "Probability"
+  myargs <- c(x=0,y=0,type="n",dots)
+    
+  if (!missing(cause)) {
+    if (class(cause)=="logical") {
+      cause <- c()
+      for (i in seq(x$ncauses)) cause <- c(cause,rep(i,x$ncauses-i+1))
+      mycol <- c(); for (i in seq(x$ncauses)) mycol <- c(mycol,(i-1)+seq(x$ncauses-i+1))
+      cause <- cbind(cause,mycol)
+    }
+    cause <- rbind(cause)
+    do.call("plot",myargs)
+    for (i in seq(nrow(cause))) {
+      P <- predict(x,cause=cause[i,])
+      lines(P,col=col[i],lwd=2)
+      NP <- npc(x$t,cause[i,])
+      pos <- unique(fastapprox(NP[,1],P[,1],NP[,2])$pos)+1
+      lines(NP[pos,],col=col[i],lty=2)
+      if (curerate)
+        abline(h=x$P[cause[i,,drop=FALSE]],col=Col(col[i],0.7),lty=2,lwd=0.5)
+    }
+    labs <- apply(cause,1,function(x) paste(x,collapse=","))
+    legend("topleft",labs,col=col[seq(nrow(cause))],lty=1,pch=-1,box.lwd=0)
+    return(invisible(x))
+  }
+  
   t <- x$t
   if (length(x$flip)>0)
     t[x$flip,] <- t[x$flip,c(2,1,4,3)]
-  plotcr(t,which=2,...)
+  if (nonpar)
+    plotcr(t,which=2,...)
+  else do.call("plot",myargs)
+  
   ll <- logLik(x,info=TRUE)
   mysd <- 1
-  P <- as.matrix(ll$P)
-  P[lower.tri(P)] <- P[upper.tri(P)]/2
-  P[upper.tri(P)] <- P[lower.tri(P)]
-  P1 <- rowSums(P)
-
+  P1 <- ll$P
+  if (x$dim==2) {
+    P <- as.matrix(ll$P)    
+    P[lower.tri(P)] <- P[upper.tri(P)]/2
+    P[upper.tri(P)] <- P[lower.tri(P)]
+    P1 <- rowSums(P)
+  }
   for (i in seq(x$ncauses)) {
     if (x$dim==2) mysd <- (ll$Sigma[2*(i-1)+1,2*(i-1)+1])^0.5
     y <- P1[i]*pnorm(ll$a[,i+1],sd=mysd)
@@ -157,11 +198,11 @@ plot.cif <- function(x,col=c("seagreen","darkred","darkblue","goldenrod","medium
 
 logLik.cif <- function(object,theta=coef(object),info=FALSE,indiv=FALSE,...) {
   loglik <- function(p,d=degree,knots=knots) {
-    with(object, logLikcif(p,t=t,B=B,dB=dB,K=K,causes=causes,ncauses=ncauses,tB=tB,d=d,idx=idx,neg=FALSE,info=info,indiv=indiv,ppar=ppar,vpar=vpar,...))
+    with(object, logLikcif(p,X1=X,Z=Z,t=t,B=B,dB=dB,K=K,causes=causes,ncauses=ncauses,tB=tB,d=d,idx=idx,neg=FALSE,info=info,indiv=indiv,ppar=ppar,vpar=vpar,...))
   }
   if (object$dim==1) {
     loglik <- function(p,d=degree,knots=knots) {
-      with(object, logLikcif1(p,t=t,B=B,dB=dB,K=K,causes=causes,ncauses=ncauses,tB=tB,d=d,idx=idx,neg=FALSE,info=info,indiv=indiv,ppar=ppar,vpar=vpar,...))
+      with(object, logLikcif1(p,X1=X,Z=Z,t=t,B=B,dB=dB,K=K,causes=causes,ncauses=ncauses,tB=tB,d=d,idx=idx,neg=FALSE,info=info,indiv=indiv,ppar=ppar,vpar=vpar,...))
     }
   }
   res <- loglik(theta,...)
@@ -186,7 +227,7 @@ score.cif <- function(x,theta=coef(x),...) {
 
 logLikcif1 <-function(theta,indiv=FALSE,neg=TRUE,info=FALSE,##) {
                       ppar,vpar,
-                      t,B,dB,K,causes,ncauses,tB,d,idx,...) {
+                      t,B,dB,X1=NULL,X2=X1,Z=NULL,K,causes,ncauses,tB,d,idx,...) {
   nb <- ncol(B)
   a1 <- da1 <- b <- db <- c()
   a <- tB
@@ -217,9 +258,25 @@ logLikcif1 <-function(theta,indiv=FALSE,neg=TRUE,info=FALSE,##) {
   }
   idx0 <- which(t[,2]==0) ## Right-censoring
 
-  ## browser()
+  M <- c()
+  curpos <- length(unlist(b))
+  ##  curpos <- nb*ncauses;
+  b1 <- c()##b2 <- c()
+    for (i in seq_len(ncauses)) {
+    if (!is.null(X1)) {      
+      bcur <- theta[curpos+seq(ncol(X1))]
+      b1 <- c(b1,list(bcur))
+      ##      b2 <- c(b2,list(theta[curpos+ncol(X1)+ncol(X2)]))
+      curpos <- curpos+ncol(X1)##+ncol(X2)
+      M <- c(M,list(as.vector(X1%*%bcur)))
+    } else {
+      M <- c(M,list(rep(0,nrow(t))))
+    }
+  }
+##  browser()
+  
   ## Cure rate parameters
-  pr <- do.call(ppar,list(theta=theta[(nb*ncauses+1):length(theta)],ncauses=ncauses,dim=1))
+  pr <- do.call(ppar,list(theta=theta[(curpos+1):length(theta)],ncauses=ncauses,dim=1))
     
   sigma2 <- 1 
   res <- numeric(nrow(t))
@@ -228,12 +285,12 @@ logLikcif1 <-function(theta,indiv=FALSE,neg=TRUE,info=FALSE,##) {
   for (i in seq_len(ncauses)) {
     idx1 <- which(t[,2]==causes[i+1])
     if (length(idx1)>0)
-      res[idx1] <- log(pr[i]*da1[[i]][idx1]) + dnorm(a1[[i]][idx1],sd=sigma2^0.5,log=TRUE)
+      res[idx1] <- log(pr[i]*da1[[i]][idx1]) + dnorm(a1[[i]][idx1]-M[[i]][idx1],sd=sigma2^0.5,log=TRUE)
     if (length(idx0)>0)
-      S <- S+pr[i]*pnorm(a1[[i]][idx0],sd=sigma2^0.5,lower.tail=FALSE,log=FALSE)
+      S <- S+pr[i]*pnorm(a1[[i]][idx0]-M[[i]][idx0],sd=sigma2^0.5,lower.tail=FALSE,log=FALSE)
   }
   if (length(idx0)>0) {
-    cat(".")
+    ##message(".")
     suppressWarnings(res[idx0] <- log(S))
     res[is.infinite(res)] <- -1e6
   }
@@ -242,7 +299,7 @@ logLikcif1 <-function(theta,indiv=FALSE,neg=TRUE,info=FALSE,##) {
   if (!indiv) ll <- sum(ll)
   res <- (ifelse(neg,-1,1)*ll)
   if (info) {
-    res <- list(logLik=ll,a=a,Sigma=sigma2,b=b,P=pr)
+    res <- list(logLik=ll,a=a,Sigma=sigma2,b=b,P=pr,b1=b1)
     return(res)
   }
   return(res)
@@ -254,6 +311,7 @@ logLikcif1 <-function(theta,indiv=FALSE,neg=TRUE,info=FALSE,##) {
 
 logLikcif <- function(theta,indiv=FALSE,neg=TRUE,info=FALSE,
                       ppar,vpar,##) {
+                      X1=NULL,X2=X1,Z=NULL,
                       t,B,dB,K,causes,ncauses,tB,d,idx,cpp="bicif",...) {
   
   AD <- c()
@@ -286,12 +344,31 @@ logLikcif <- function(theta,indiv=FALSE,neg=TRUE,info=FALSE,
     ##    af <- approxfun(t.,a)
     ##    a1.. <- af(t[,1])    
     a2. <- fastapprox(tB,t[,2],a0)
-    ## nx4-matrix with columns a1(t1), a2(t2), a1'(t1), a2'(t2)
+    ## n x 4-matrix with columns a1(t1), a2(t2), a1'(t1), a2'(t2)
     AD <- c(AD, list(cbind(a1.$t,a2.$t,log(da0[a1.$pos+1]),log(da0[a2.$pos+1]))))
   }
   names(AD) <- causes[-1]
 
-  theta1 <- theta[-seq(nb*ncauses)]
+  curpos <- nb*ncauses
+
+  M1 <- b1 <- c()##b2 <- c()
+    for (i in seq_len(ncauses)) {
+    if (!is.null(X1)) {      
+      bcur <- theta[curpos+seq(ncol(X1))]
+      b1 <- c(b1,list(bcur))
+      ##      b2 <- c(b2,list(theta[curpos+ncol(X1)+ncol(X2)]))
+      curpos <- curpos+ncol(X1)##+ncol(X2)
+      Mcur <- as.vector(X1%*%bcur)
+      M1 <- c(M1,list(Mcur))
+      AD[[i]][,1] <- AD[[i]][,1]-Mcur
+      AD[[i]][,2] <- AD[[i]][,2]-Mcur
+    } else {
+      M1 <- c(M1,list(rep(0,nrow(t))))
+    }
+  }
+
+  
+  theta1 <- theta[-seq(curpos)]
   Sigma <- do.call(vpar,list(theta=theta1,ncauses=ncauses))
   theta2 <- theta1[-seq(attributes(Sigma)$npar)]
   P <- do.call(ppar,list(theta=theta2,ncauses=ncauses))
@@ -310,244 +387,13 @@ logLikcif <- function(theta,indiv=FALSE,neg=TRUE,info=FALSE,
   ll <- ifelse(neg,-1,1)*ll
 
   if (info) {
-    res <- list(logLik=ll,a=a,Sigma=Sigma,b=b,P=P)
+    res <- list(logLik=ll,a=a,Sigma=Sigma,b=b,b1=b1,P=P)
     return(res)
   }
   return(ll)
 }
 
 ###}}} logLikcif
-
-###{{{ Simulation
-
-simcif <- function(n,theta=list(c(-10,1,0.1),c(-10,0.1,.2)),
-                Sigma, pr,
-                range=c(0,100),
-                a=function(t,theta) theta[1]+theta[2]*t+theta[3]*exp(t),
-                ia,
-                cens
-                ) {
-  if (!is.list(theta)) theta <- list(theta)
-  ncauses <- length(theta)
-  if (missing(Sigma)) {
-    Sigma <- diag(2*ncauses)+1
-    for (i in seq_len(ncauses)) {
-      Sigma[1:2+(i-1)*2,1:2+(i-1)*2] <- Sigma[1:2+(i-1)*2,1:2+(i-1)*2]+i
-    }    
-  }
-  np <- (ncauses+1)*(ncauses)/2
-  if (missing(pr)) {
-    pr <- 1/2^seq_len(np-1)
-  }
-  pr <- c(pr,1-sum(pr))
-  P <- matrix(ncol=ncauses,nrow=ncauses)
-  if (ncauses==1) {
-    P[1,1] <- 1
-  } else {    
-    P[upper.tri(P,diag=TRUE)] <- pr
-    P[lower.tri(P)] <- P[upper.tri(P)] <- P[upper.tri(P)]/2
-  }
-
-  invexpl <- !missing(ia)
-  t. <- seq(range[1],range[2],length.out=1000)
-  pa <- matrix(ncol=1+ncauses,nrow=length(t.))
-  pa[,1] <- t.
-  aa <- pa
-
-  simcauses <- rmultinom(1,n,as.vector(P))
-  T <- Y <- matrix(ncol=4,nrow=n)
-  N <- 0
-  pos <- 0
-
-  for (j in seq_len(ncauses)) {
-    for (i in seq_len(ncauses)) {
-      pos <- pos+1
-      if (simcauses[pos]>0) {
-        Nprev <- N+1
-        N <- N + simcauses[pos]
-        pseq <- seq(Nprev,N)
-        T[pseq,3] <- Y[pseq,3] <- i
-        T[pseq,4] <- Y[pseq,4] <- j
-        idx <- c(1+(i-1)*2,2+(j-1)*2)
-        S <- Sigma[idx,idx,drop=FALSE]
-        val <- rnorm(simcauses[pos],sd=S[1,1]^0.5)
-        cm <- CondMom(c(0,0),S,2,X=cbind(val))
-        Y[pseq,1] <- val
-        Y[pseq,2] <- with(cm, rnorm(simcauses[pos],mean=as.vector(mean),sd=var^0.5))
-        
-        theta0 <- theta[[i]];
-        a. <- a(t.,theta0)
-        if (!invexpl) {
-          ia <- function(x,...) {
-            fastapprox(a.,x,t.)$t
-          }
-        }
-        T[pseq,1] <- ia(Y[pseq,1],theta0)
-        theta0 <- theta[[j]]; # subject two
-        a. <- a(t.,theta0)
-        if (!invexpl) {
-          ia <- function(x,...) {
-            fastapprox(a.,x,t.)$t
-          }
-        }      
-        T[pseq,2] <- ia(Y[pseq,2],theta0)
-      }
-    }
-  }
-##  browser()
-
-
-  for (i in seq_len(ncauses)) { ## Marginals
-    theta0 <- theta[[i]];
-    a. <- a(t.,theta0)
-    aa[,i+1] <- a.
-    pa[,i+1] <- pnorm(a.,sd=Sigma[i*2,i*2]^0.5)
-  }
-  
-  if (!missing(cens)) {    
-    if (is.function(cens)) {
-      cens <- cens(T[,1:2])
-    }    
-    T[T[,1]>=cens[,1],3] <- 0
-    T[T[,2]>=cens[,2],4] <- 0
-    T[T[,3]==0,1] <- cens[T[,3]==0,1]
-    T[T[,4]==0,2] <- cens[T[,4]==0,2]
-  }
-  colnames(T) <- c("t1","t2","cause1","cause2")
-  res <- list(data=T,prob=pa,var=Sigma,P=P,a=aa)
-  class(res) <- "simt"
-  return(res)
-}
-
-print.simt <- function(x,...) {
-  ##  cat("(t1,t2,cause1,cause2):\n")
-  with(x, print(data))
-  cat("Variance:\n")  
-  with(x, print(var))
-  cat("Prob. causes:\n")  
-  with(x, print(P))
-  invisible(x)
-}
-
-###}}} Simulation
-
-###{{{ plotcr
-
-plotcr <- function(x,col,legend=TRUE,which=1:2,
-                   ask = prod(par("mfcol")) < length(which) && dev.interactive(),
-                   ...) {
-  dots <- list(...)
-  if ((!is.data.frame(x) | !is.matrix(x)) && ncol(x)<2) stop("Wrong type of data")
-  if (ncol(x)==2) {
-    co <- cuminc(x[,1],x[,2])
-    if (any(x[,1]<0)) {
-      for (i in seq(length(co))) {
-        co[[i]]$time <- co[[i]]$time[-1]
-        co[[i]]$est <- co[[i]]$est[-1]
-      }
-      if (is.null(dots$xlim)) dots$xlim <- range(x[,1])
-    }
-    do.call("plot", c(list(x=co), dots))
-    return(invisible(co))
-  }
-
-  if (ask) {
-    oask <- devAskNewPage(TRUE)
-    on.exit(devAskNewPage(oask))
-  }
-  
-  t <- x[,1:2]; cause <- x[,3:4]
-  causes <- sort(setdiff(unique(cause),0))
-  if (missing(col)) col <- c("seagreen","darkred","darkblue","goldenrod","mediumpurple")
-  if (1%in%which) {
-    plot(t,type="n",...)
-    count <- 1
-    for (i in causes) {
-      points(t[cause[,1]==causes[i],],col=Col(col[count],0.5),pch=2)
-      points(t[cause[,2]==causes[i],],col=Col(col[count],0.5),pch=6)
-      count <- count+1
-    }
-    points(t[cause[,1]==0 & cause[,2]==0,],col=Col("black",0.2),pch=1)  
-    if (legend)
-    legend("topleft", c("Subj 1, Cause 1", "Subj 2, Cause 1",
-                        "Subj 1, Cause 2", "Subj 2, Cause 2",
-                        "Double Censoring"), pch=c(2,6,2,6,1), col=c(rep(col[1:length(causes)],each=2),"black"))
-  }
-  if (2%in%which) {
-    co1 <- cuminc(t[,1],cause[,1])
-    co2 <- cuminc(t[,2],cause[,2])
-    if (any(t[,1]<0)) {
-      for (i in seq(length(co1))) {
-        co1[[i]]$time <- co1[[i]]$time[-1]
-        co1[[i]]$est <- co1[[i]]$est[-1]
-      }
-      for (i in seq(length(co2))) {
-        co2[[i]]$time <- co1[[i]]$time[-1]
-        co2[[i]]$est <- co1[[i]]$est[-1]
-      }
-    }
-    if (is.null(dots$xlim)) dots$xlim <- range(t)
-    do.call("plot", c(list(x=co1), dots))
-    for (i in seq(length(co2)))
-      with(co2[[i]], lines(time,est,type="s",lty=i,...))
-  }
-}
-
-###}}} plotcr
-
-###{{{ nonparcuminc
-
-npc <- function(T,cause,same.cens=TRUE,sep=FALSE) {
-  mtime <- apply(T[,1:2],1,max)
-  ot <- order(mtime)
-  mtime <- mtime[ot]
-  T <- T[ot,]
-  if (!sep) {
-    time1 <- as.vector(T[,1:2]); status1 <- as.vector(T[,3:4])
-    ud.cens1<-survfit(Surv(time1,status1==0)~+1);
-    Gfit1<-cbind(ud.cens1$time,ud.cens1$surv)
-    Gfit2 <- Gfit1<-rbind(c(0,1),Gfit1);
-  } else {
-    time1 <- as.vector(T[,1]); status1 <- as.vector(T[,3])
-    ud.cens1<-survfit(Surv(time1,status1==0)~+1);
-    time2 <- as.vector(T[,2]); status2 <- as.vector(T[,4])
-    ud.cens2<-survfit(Surv(time2,status2==0)~+1);
-    Gfit1<-cbind(ud.cens1$time,ud.cens1$surv)
-    Gfit1<-rbind(c(0,1),Gfit1);
-    Gfit2<-cbind(ud.cens2$time,ud.cens2$surv)
-    Gfit2<-rbind(c(0,1),Gfit2);
-  }
-  cweights1<-fastapprox(Gfit1[,1],T[,1],Gfit1[,2])[[1]]
-  cweights2<-fastapprox(Gfit2[,1],T[,2],Gfit2[,2])[[1]];
-  weight11 <- apply(cbind(cweights1,cweights2),1,min)
-
-  if (same.cens) {
-    conc <- (T[,3]==cause[1])*(T[,4]==cause[2])/weight11
-  } else {
-    conc <-(T[,3]==cause[1])*(T[,4]==cause[2])/(cweights1*cweights2);
-  }
-  mtime <- mtime[!is.na(conc)]
-  conc <- conc[!is.na(conc)]
-  cbind(mtime,cumsum(conc)/length(conc))
-}
-
-
-nonparcuminc <- function(t,status,cens=0) {
-  ord <- order(t); t <- t[ord]; status <- status[ord]
-  ud.cens<-survfit(Surv(t,status==cens)~1)
-  Gfit<-cbind(ud.cens$time,ud.cens$surv)
-  Gfit<-rbind(c(0,1),Gfit);
-  causes <- setdiff(unique(status),cens)
-  cweight<-fastapprox(Gfit[,1],t,Gfit[,2])[[1]];
-  cc <- t
-  for (i in 1:length(causes)) {
-    c1 <- status==causes[i]
-    cc <- cbind(cc,cumsum(c1/cweight)/length(c1))
-  }
-  return(cc)
-}
-
-###}}} nonparcuminc
 
 ###{{{ splinebasis
 
@@ -573,6 +419,7 @@ splinebasis <- function(t,knots=quantile(t,c(0.5)),
 ###}}} splinebasis
 
 ###{{{ CondMom
+
 CondMom <- function(mu,S,idx,X) {
   if (ncol(S)==length(idx)) {
     return(list(mean=mu,var=S))
@@ -605,12 +452,33 @@ CondMom <- function(mu,S,idx,X) {
 
 ###{{{ ppar
 
-prob_cif.ppar <- function(theta,ncauses,...) {
+prob_cif.ppar <- function(theta,ncauses,dim=2,...) {
 ##  if (is.null(theta)) return(ncauses*(ncauses-1)/2+ncauses)
   if (is.null(theta)) return(ncauses*(ncauses-1)/2+ncauses)
   
-  P <- matrix(0,ncol=ncauses,ncauses) ## Cure rate matrix 
-  expit <- function(z,b=1) (b)/(1+exp(-z)) ## y\in(0,b)  
+  P <- matrix(0,ncol=ncauses,ncauses) ## Cure rate matrix
+  P[1,1] <- 1
+  expit <- function(z,b=1) (b)/(1+exp(-z)) ## y\in(0,b)
+
+  if (dim==1) {
+    pr <- rep(1,ncauses)
+    if (ncauses>1 & length(theta)>0) {      
+      npr <- ncauses
+##    if (length(idx0)==0) npr <- npr-1
+      A <- pos <- 0
+      pr <- c()
+      for (i in seq_len(npr-1)) {
+        pos <- pos+1
+        ##        pr0 <- expit(theta[nb*ncauses+i],b=1-A)
+        pr0 <- expit(theta[pos],b=1-A)
+        pr <- c(pr,pr0)
+        A <- A+pr0
+      }
+      pr <- c(pr,1-A)
+    }
+    return(pr)
+  }
+  
   A <- 0
   ##  if (ncauses>1 & !(length(theta)<=nb*ncauses+npvar))
   if (ncauses>1 & length(theta)>0) {
@@ -653,7 +521,7 @@ prob1_cif.ppar <- function(theta,ncauses,dim=2,...) {
     return(pr)
   }
   
-  P <- matrix(0,ncol=ncauses,ncauses) ## Cure rate matrix 
+  P <- matrix(0,ncol=ncauses,ncauses) ## Cure rate matrix
   A <- 0
   if (ncauses>1 & length(theta)>0) {
     npr <- ncauses*(ncauses-1)/2
@@ -873,3 +741,4 @@ unstruct_cif.vpar <- function(theta,ncauses,...) {
 }  
 
 ###}}} varpar
+

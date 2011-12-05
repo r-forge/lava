@@ -1,6 +1,7 @@
 useDynLib(bptwin)
 import(utils)
 import(stats)
+import(lava)
 
 export(
        plotcr,
@@ -13,31 +14,34 @@ export(
        splinebasis,
        CondMom,
        bptwin,
-       bptwin0,
-       bptwin,
+       bicomprisk,
        biprobit,
        bpnd,
-       score,
        npc,
        fastapprox       
 )
 
 S3method(sim, "bptwin")
-S3method(score, "bptwin")
-S3method(logLik, "bptwin")
-S3method(vcov, "bptwin")
-S3method(coef, "bptwin")
-S3method(print, "bptwin")
+S3method(score, "biprobit")
+S3method(logLik, "biprobit")
+S3method(vcov, "biprobit")
+S3method(coef, "biprobit")
+S3method(print, "biprobit")
+S3method(summary, "biprobit")
+S3method(print, "summary.biprobit")
 S3method(summary, "bptwin")
 S3method(print, "summary.bptwin")
+
+S3method(print, "biprobit.strata")
+S3method(coef, "biprobit.strata")
+S3method(summary, "biprobit.strata")
+S3method(logLik, "biprobit.strata")
+S3method(score, "biprobit.strata")
+
 
 S3method(plot, "cumh")
 S3method(summary, "cumh")
 S3method(print, "cumh")
-
-
-S3method(summary, "bptwin.list")
-S3method(print, "bptwin.list")
        
 S3method(predict,"cif")
 S3method(logLik,"cif")

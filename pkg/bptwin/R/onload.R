@@ -1,7 +1,7 @@
-'.onLoad' <- function(lib, pkg="bptwin")
+'.onAttach' <- function(lib, pkg="bptwin")
   {    
     desc <- packageDescription(pkg)
-    cat("Loading '", desc$Package, "' package...\n", sep="")
-    cat("Version:\t ", desc$Version, "\n", sep="")
-    cat("Overview:\t help(package=", desc$Package, ")\n", sep="");   
+    packageStartupMessage("\nLoading '", desc$Package, "' package...\n",
+                          "Version    : ", desc$Version, "\n",
+                          "Overview: help(package=", desc$Package, ")\n");
   }

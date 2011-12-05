@@ -1,8 +1,7 @@
 ## Use the R_HOME indirection to support installations of multiple R version
-MYPATH=/home/ifsvafd/bsafd/kkho/R/library.
-PKG_CXXFLAGS=$(shell Rscript -e 'Rcpp:::CxxFlags(); cat(" "); RcppArmadillo:::CxxFlags()')
+PKG_CXXFLAGS=$(shell $(R_HOME)/bin/R --slave -e 'Rcpp:::CxxFlags(); cat(" "); RcppArmadillo:::CxxFlags()')
 ##-I$(HOME)/RcppArmadillo/include 
-PKG_LIBS=$(shell Rscript -e 'cat(" -L",.libPaths()[1],"/RcppArmadillo/libs"," ",sep=""); Rcpp:::LdFlags();') $(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS)
+PKG_LIBS=$(shell $(R_HOME)/bin/R --slave -e 'cat(" -L",.libPaths()[1],"/RcppArmadillo/libs"," ",sep=""); Rcpp:::LdFlags();') $(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS)
 ##-L$(HOME)/RcppArmadillo/libs 
 
 ## for C code
