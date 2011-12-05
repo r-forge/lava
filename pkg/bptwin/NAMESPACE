@@ -18,6 +18,7 @@ export(
        biprobit,
        bpnd,
        npc,
+       bicomprisk
        fastapprox       
 )
 
