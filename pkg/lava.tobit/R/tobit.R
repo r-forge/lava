@@ -234,6 +234,9 @@ cens.score <- function(x,p,data,cens.idx,cens.which.left,weight,...) {
         mu <- -mu
         dmu <- -dmu
       }
+      yy <- c(1,1); yy[cens.which.left] <- 0
+##      print(yy)
+##      print(mu)      
 ##      print(system.time(
       DCDF <- Dthetapmvnorm(zi,
                             ##        mu=L%*%M$mu.censIobs[i,],
@@ -402,7 +405,9 @@ Dthetapmvnorm <- function(yy,mu,S,dmu,dS,seed=lava.options()$tobitseed,
     a <- pmvnorm(upper=y,mean=as.numeric(mu),sigma=S,algorithm=algorithm)
     DC <- Dpmvnorm(z,R,std=TRUE,algorithm=algorithm)
     MM <- -LR%*%(DC$grad)
-    VV <- LR%*%(DC$hessian)%*%t(LR) + a*S    
+    VV <- LR%*%(DC$hessian)%*%t(LR) + a*S
+##    message("DC")
+##    print(DC$hessian)
     part1 <- K1*a
     if (!is.null(weight)) {
       VV <- VV%*%weight

@@ -13,7 +13,7 @@ lava.tobit.color.hook <- function(x,subset=vars(x),...) {
 }
 
 lava.tobit.estimate.hook <- function(x,data,weight,weight2,estimator,...) {
-  dots <- list(...) 
+  dots <- list(...)
 ## Binary outcomes -> censored regression
   if (is.null(dim(data))) return(NULL)
   if (estimator%in%c("gaussian","tobit")) {
