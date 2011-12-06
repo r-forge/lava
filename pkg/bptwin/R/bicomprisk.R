@@ -1,4 +1,4 @@
-bicomprisk <- function(formula, data, cause=c(1,1), cens=0, causes, indiv, strata=NULL, id,num,prodlim=FALSE,messages=TRUE,...) {
+bicomprisk <- function(formula, data, cause=c(1,1), cens=0, causes, indiv, strata=NULL, id,num,prodlim=FALSE,messages=TRUE,model,...) {
   mycall <- match.call()
   formulaId <- Specials(formula,"id")
   formulaIndiv <- Specials(formula,"indiv")
@@ -15,11 +15,11 @@ bicomprisk <- function(formula, data, cause=c(1,1), cens=0, causes, indiv, strat
     strata <- formulaStrata
     mycall$strata <- strata
   }
+  indiv <- formulaIndiv
   if (!is.null(formulaIndiv)) {
-    indiv <- formulaIndiv
     mycall$indiv <- indiv
-  }
-  ##  browser()
+  } 
+  if (missing(id)) stop("Missing 'id' variable")
   
   timevar <- terms(formula)[[2]]
   ##  hh <- with(data,eval(timevar))
@@ -49,9 +49,7 @@ bicomprisk <- function(formula, data, cause=c(1,1), cens=0, causes, indiv, strat
   }
 
   covars <- as.character(attributes(terms(formula))$variables)[-(1:2)]
-  indiv <- indiv2 <- covars2 <- NULL
-  ##  suppressMessages(browser())
-  
+  indiv2 <- covars2 <- NULL 
   
   data <- data[order(data[,id]),]
   idtab <- table(data[,id])
@@ -117,10 +115,17 @@ bicomprisk <- function(formula, data, cause=c(1,1), cens=0, causes, indiv, strat
   names(mydata) <- c(timevar,causes,covars,indiv2)
   
   if (!prodlim) {
-    ff <- as.formula(paste("Surv(",timevar,",",causes,"!=",cens,")~",paste(c("1",covars,indiv2),collapse="+")))
-
-    add<-comp.risk(Surv(time,status>0)~1,data=mydata0,
-                   status,causeS=1,n.sim=0,resample.iid=0)
+    ff <- paste("Surv(",timevar,",",causes,"!=",cens,") ~ 1",sep="")
+    if (length(c(covars,indiv))>0) {
+      xx <- c(covars,indiv2)
+      for (i in seq_len(length(xx)))
+        xx[i] <- paste("const(",xx[i],")",sep="")
+      ff <- paste(c(ff,xx),collapse="+")
+      if (missing(model)) model <- "fg"      
+    }
+    if (missing(model)) model <- "additive"
+    add<-comp.risk(as.formula(ff),data=mydata,
+                   status,causeS=1,n.sim=0,resample.iid=0,model=model)
     padd <- predict(add,X=1,se=0,uniform=0)
   } else {
     ff <- as.formula(paste("Hist(",timevar,",",causes,")~",paste(c("1",covars,indiv2),collapse="+")))
