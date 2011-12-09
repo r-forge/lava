@@ -220,7 +220,6 @@ bicomprisk <- function(formula, data, cause=c(1,1), cens=0, causes, indiv, strat
   ##   newpos[i] <- newpos[i] + ifelse(i%%2==1,1,-1)
   ##  ww0[switchers,switchpos] <- ww0[switchers,newpos]
   ww0 <- na.omit(ww0)
-  browser()
  
   status <- rep(0,nrow(ww0))
   time <- ww0[,timevar2[2]]
