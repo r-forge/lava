@@ -235,18 +235,13 @@ bicomprisk <- function(formula, data, cause=c(1,1), cens=0, causes, indiv, strat
   status[idx2] <- 1
   time[idx2] <- apply(ww0[idx2,timevar2[1:2]],1,max)
 
-  ##(0,0)
-  idx2 <- which(ww0[,causes2[1]]==cens & ww0[,causes2[2]]==cens)
-  status[idx2] <- 0
-  time[idx2] <- ww0[idx2,timevar2[1]]
-
-  ##(0,j)
-  idx2 <- which(ww0[,causes2[1]]==cens & ww0[,causes2[2]]==cause[2])
+  ##(0,0), (0,j)
+  idx2 <- which(ww0[,causes2[1]]==cens & (ww0[,causes2[2]]==cens | ww0[,causes2[2]]==cause[2])
   status[idx2] <- 0
   time[idx2] <- ww0[idx2,timevar2[1]]
 
   ##(ic,0), (ic,j)
-  idx2 <- which(ww0[,causes2[1]]!=cens & ww0[,causes2[1]]!=i & (ww0[,causes2[2]]==cens | ww0[,causes2[2]]==cause[2]))
+  idx2 <- which(ww0[,causes2[1]]!=cens & ww0[,causes2[1]]!=cause[1] & (ww0[,causes2[2]]==cens | ww0[,causes2[2]]==cause[2]))
   status[idx2] <- 2
   time[idx2] <- ww0[idx2,timevar2[1]]
 
@@ -256,7 +251,7 @@ bicomprisk <- function(formula, data, cause=c(1,1), cens=0, causes, indiv, strat
   time[idx2] <- ww0[idx2,timevar2[2]]
 
   ##(ic,jc)
-  idx2 <- which(ww0[,causes2[1]]!=cens & ww0[,causes2[1]]!=i & (ww0[,causes2[2]]!=cens & ww0[,causes2[2]]!=cause[2]))
+  idx2 <- which(ww0[,causes2[1]]!=cens & ww0[,causes2[1]]!=cause[1] & (ww0[,causes2[2]]!=cens & ww0[,causes2[2]]!=cause[2]))
   status[idx2] <- 2
   time[idx2] <- apply(ww0[idx2,timevar2[1:2]],1,min)
 
