@@ -229,8 +229,7 @@ bicomprisk <- function(formula, data, cause=c(1,1), cens=0, causes, indiv, strat
   time <- status <- rep(0,nrow(ww0))
   time <- ww0[,"time.1"]
 
-  suppressMessages(browser())
-  
+  ##  suppressMessages(browser())  
 
   ##(i,j)
   idx2 <- which(ww0[,causes2[1]]==cause[1] & ww0[,causes2[2]]==cause[2])
