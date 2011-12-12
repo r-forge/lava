@@ -137,7 +137,7 @@ bicomprisk0 <- function(formula, data, cause=c(1,1), cens=0, causes, indiv, stra
 }
 ###}}} bicomprisk0
 
-bicomprisk <- function(formula, data, cause=c(1,1), cens=0, causes, indiv, strata=NULL, id,num,prodlim=FALSE,messages=TRUE,model,...) {
+bicomprisk <- function(formula, data, cause=c(1,1), cens=0, causes, indiv, strata=NULL, id,num,sym=FALSE,ssym=FALSE,prodlim=FALSE,messages=TRUE,model,...) {
   mycall <- match.call()
   formulaId <- Specials(formula,"id")
   formulaIndiv <- Specials(formula,"indiv")
@@ -161,7 +161,6 @@ bicomprisk <- function(formula, data, cause=c(1,1), cens=0, causes, indiv, strat
   if (missing(id)) stop("Missing 'id' variable")
   
   timevar <- terms(formula)[[2]]
-  ##  hh <- with(data,eval(timevar))
   if (is.call(timevar)) {
     causes <- timevar[[3]]
     timevar <- timevar[[2]]
@@ -186,7 +185,6 @@ bicomprisk <- function(formula, data, cause=c(1,1), cens=0, causes, indiv, strat
       return(res)
     }
   }
-
   covars <- as.character(attributes(terms(formula))$variables)[-(1:2)]
   indiv2 <- covars2 <- NULL 
   
@@ -210,15 +208,26 @@ bicomprisk <- function(formula, data, cause=c(1,1), cens=0, causes, indiv, strat
   
   ww0 <- reshape(data[,c(timevar,causes,covars,indiv,id,num)],
                  direction="wide",idvar=id,timevar=num)[,c(timevar2,causes2,indiv2,covars2)]
- 
-  ## switchers <- which(ww0[,timevar2[1]]>ww0[,timevar2[2]])
-  ## switchpos <- 1:4
-  ## if (length(indiv)>0)
-  ##   switchpos <- c(switchpos, seq_len(2*length(indiv))+4)
-  ## newpos <- switchpos
-  ## for (i in seq_len(length(newpos)))   
-  ##   newpos[i] <- newpos[i] + ifelse(i%%2==1,1,-1)
-  ##  ww0[switchers,switchpos] <- ww0[switchers,newpos]
+
+  if (sym & cause[1]!=cause[2]) {
+    switchpos <- 1:4
+    if (length(indiv)>0)
+       switchpos <- c(switchpos, seq_len(2*length(indiv))+4)
+     newpos <- switchpos
+     for (i in seq_len(length(newpos)))   
+       newpos[i] <- newpos[i] + ifelse(i%%2==1,1,-1)
+    ww1 <- ww0[,newpos]; colnames(ww1) <- colnames(ww0)
+    ww0 <- rbind(ww0,ww1)
+    ## suppressMessages(browser())  
+    ## switchers <- which(ww0[,causes2[1]]==cause[2] & ww0[,causes2[2]]==cause[1])
+    ## switchpos <- 1:4
+    ## if (length(indiv)>0)
+    ##   switchpos <- c(switchpos, seq_len(2*length(indiv))+4)
+    ## newpos <- switchpos
+    ## for (i in seq_len(length(newpos)))   
+    ##   newpos[i] <- newpos[i] + ifelse(i%%2==1,1,-1)
+    ## ww0[switchers,switchpos] <- ww0[switchers,newpos]
+  }
   ww0 <- na.omit(ww0)
  
   status <- rep(0,nrow(ww0))
@@ -226,39 +235,53 @@ bicomprisk <- function(formula, data, cause=c(1,1), cens=0, causes, indiv, strat
   mycauses <- setdiff(unique(data[,causes]),0)
 
   time <- status <- rep(0,nrow(ww0))
-  time <- ww0[,"time.1"]
+  ##  time <- ww0[,"time.1"]
 
-  ##  suppressMessages(browser())  
-
-  ##(i,j)
-  idx2 <- which(ww0[,causes2[1]]==cause[1] & ww0[,causes2[2]]==cause[2])
+  ## cause = (i,j)
+  primcond <- ww0[,causes2[1]]==cause[1] & ww0[,causes2[2]]==cause[2]
+  if (ssym) primcond <- primcond | (ww0[,causes2[1]]==cause[2] & ww0[,causes2[2]]==cause[1]) ## (j,i)
+  idx2 <- which(primcond)
   status[idx2] <- 1
   time[idx2] <- apply(ww0[idx2,timevar2[1:2]],1,max)
-
+  ##  suppressMessages(browser())  
+  
   ##(0,0), (0,j)
-  idx2 <- which(ww0[,causes2[1]]==cens & (ww0[,causes2[2]]==cens | ww0[,causes2[2]]==cause[2]))
+  cond <- ww0[,causes2[1]]==cens & (ww0[,causes2[2]]==cens | ww0[,causes2[2]]==cause[2])
+  if (ssym) cond <- ww0[,causes2[1]]==cens & (ww0[,causes2[2]]%in%c(cens,cause)) ## (0,i)
+  idx2 <- which(cond)
   status[idx2] <- 0
-  time[idx2] <- ww0[idx2,timevar2[1]]
-
-  ##(ic,0), (ic,j)
-  idx2 <- which(ww0[,causes2[1]]!=cens & ww0[,causes2[1]]!=cause[1] & (ww0[,causes2[2]]==cens | ww0[,causes2[2]]==cause[2]))
-  status[idx2] <- 2
   time[idx2] <- ww0[idx2,timevar2[1]]
 
   ##(i,0)
-  idx2 <- which(ww0[,causes2[1]]==cause[1] & ww0[,causes2[2]]==cens)
+  cond <- ww0[,causes2[1]]==cause[1] & ww0[,causes2[2]]==cens
+  if (ssym) cond <- (ww0[,causes2[1]]%in%cause & ww0[,causes2[2]]==cens) ## (j,0)
+  idx2 <- which(cond)
   status[idx2] <- 0
   time[idx2] <- ww0[idx2,timevar2[2]]
-
+  
   ##(ic,jc)
-  idx2 <- which(ww0[,causes2[1]]!=cens & ww0[,causes2[1]]!=cause[1] & (ww0[,causes2[2]]!=cens & ww0[,causes2[2]]!=cause[2]))
+  cond <- ww0[,causes2[1]]!=cens & ww0[,causes2[1]]!=cause[1] & (ww0[,causes2[2]]!=cens & ww0[,causes2[2]]!=cause[2])
+  if (ssym) {
+    cond <- (cond | ww0[,causes2[1]]!=cens & ww0[,causes2[1]]!=cause[2] & (ww0[,causes2[2]]!=cens & ww0[,causes2[2]]!=cause[1])) & !primcond
+  }
+  idx2 <- which(cond)
   status[idx2] <- 2
   time[idx2] <- apply(ww0[idx2,timevar2[1:2]],1,min)
+  
+  ##(ic,0), (ic,j) **
+  cond <- ww0[,causes2[1]]!=cens & ww0[,causes2[1]]!=cause[1] & (ww0[,causes2[2]]==cens | ww0[,causes2[2]]==cause[2])
+  if (ssym) cond <- (cond | (ww0[,causes2[1]]!=cens & ww0[,causes2[1]]==cause[2] & (ww0[,causes2[2]]==cens | ww0[,causes2[2]]==cause[1]))) & !primcond  ##(jc,0), (jc,i)
+  idx2 <- which(cond)
+  status[idx2] <- 2
+  time[idx2] <- ww0[idx2,timevar2[1]]
 
   ##(0,jc),(i,jc)
-  idx2 <- which((ww0[,causes2[1]]==cens | ww0[,causes2[1]]==cause[1]) & (ww0[,causes2[2]]!=cens & ww0[,causes2[2]]!=cause[2]))
+  cond <- (ww0[,causes2[1]]==cens | ww0[,causes2[1]]==cause[1]) & (ww0[,causes2[2]]!=cens & ww0[,causes2[2]]!=cause[2])
+  if (ssym) cond <- (cond | (ww0[,causes2[1]]==cens | ww0[,causes2[1]]==cause[2]) & (ww0[,causes2[2]]!=cens & ww0[,causes2[2]]!=cause[1])) & !primcond  ##(0,ic),(j,ic)
+  idx2 <- which(cond)
   status[idx2] <- 2
   time[idx2] <- ww0[idx2,timevar2[2]]
+
   
   mydata0 <- mydata <- data.frame(time,status,ww0[,covars2],ww0[,indiv2])
   names(mydata) <- c(timevar,causes,covars,indiv2)
