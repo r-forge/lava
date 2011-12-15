@@ -4,11 +4,12 @@ using namespace std;
 using namespace Rcpp;
 using namespace arma;
 
-RcppExport SEXP bicif2(SEXP n, SEXP ad, SEXP ii, SEXP causes, 
-		       SEXP m, SEXP S, SEXP P) {
+RcppExport SEXP bicif(SEXP n, SEXP ad, SEXP ii, SEXP causes, 
+		      SEXP m, SEXP S, SEXP P) {
 
   GenericVector AD(ad);
   NumericMatrix Pr(P);
+  mat PP(Pr.begin(), Pr.nrow(), Pr.ncol(), false);
   NumericMatrix sigma(S);
   NumericVector Causes(causes);
   GenericVector II(ii);
@@ -33,8 +34,17 @@ RcppExport SEXP bicif2(SEXP n, SEXP ad, SEXP ii, SEXP causes,
   }
   unsigned N = as<int>(n);//TT[1].n_rows;
 
-  NumericVector ll(N);
-  //  NumericVector vec;
+  NumericVector ll(N); // log-Likelihood
+  
+  mat Pmarg1 = sum(PP,1);
+  mat Pmarg2 = sum(PP,0);
+    
+  //  for (unsigned i=0; i<ncauses; i++)
+  //    cerr << "P" << i << "=" << Pmarg(i) << endl;
+  // cerr << endl;
+  // cerr << "PP=" << PP << endl;
+  // cerr << "P1=" << Pmarg1;
+  // cerr << "P2=" << Pmarg2 << endl;
 
   // Censored observations: log(S(t1,t2))
   string causestr = "0 0";
@@ -43,30 +53,50 @@ RcppExport SEXP bicif2(SEXP n, SEXP ad, SEXP ii, SEXP causes,
   if (Idx.size()>0) {
     save.push_back(causestr);          
     for (unsigned i=0; i<ncauses; i++) {
-      for (unsigned j=0; j<ncauses; j++) {
-	pos1 = i*2;
+      pos1 = i*2;
+      //      for (int k=0; k<Idx.size(); k++) ll[Idx[k]-1] = 0;
+      double s1 = sqrt(Sigma(pos1,pos1));      
+      
+      for (int k=0; k<Idx.size(); k++) {
+	unsigned idx = Idx[k]-1;
+	double a0 = TT[i](idx,0);
+	double a1 = TT[i](idx,1);
+	//	double da0 = TT[i](idx,2);
+	//	double da1 = TT[i](idx,3);
+	double F1i = Pmarg1(i)*Rf_pnorm5(a0,0,s1,1,0); //Rcpp::stats::pnorm_0(a0,1,0); //Rf_pnorm5
+	double F2i = Pmarg2(i)*Rf_pnorm5(a1,0,s1,1,0); //Rcpp::stats::pnorm_0(a1,1,0);
+	ll[idx] = ll[idx] + F1i+F2i;
+	// if (k==Idx.size()-1) {
+	//   cerr << "Pmarg1[" << i << "]=" << Pmarg1(i) << endl;
+	//   cerr << "Pmarg2[" << i << "]=" << Pmarg2(i) << endl;
+	//   cerr << "a0=" << a0 <<endl;
+	//   cerr << "a1=" << a1 <<endl;
+	//   cerr << "s1=" << s1 << endl;
+	//   cerr << "F1=" << F1i << endl;
+	//   cerr << "F2=" << F2i << endl;
+	//   cerr << "P1=" << Rf_pnorm5(a0,0,1,1,0) << endl;
+	//   cerr << "P2=" << Rcpp::stats::pnorm_0(a1,1,0) << endl;
+	// }
+      }
+      for (unsigned j=i; j<ncauses; j++) {
+	//for (unsigned j=i; j<ncauses; j++) {
 	pos2 = j*2+1;
-	double l1 = 1/sqrt(Sigma(pos1,pos1));
-	double l2 = 1/sqrt(Sigma(pos2,pos2));
-	double rho = Sigma(pos1,pos2)*(l1*l2);
+	double s2 = sqrt(Sigma(pos2,pos2));
+	double rho = Sigma(pos1,pos2)/(s1*s2);
 	double pr = Pr(i,j);
-	        
+	
 	for (int k=0; k<Idx.size(); k++) {
 	  unsigned idx = Idx[k]-1;
-	  //	  double a0 = -TT[i](idx,0)*l1;
-	  //	  double a1 = -TT[j](idx,1)*l2;
-	  //	  Language call("bpnd", a0,a1,rho);
-	  //	  double bpn = Rcpp::as<double>(call.eval());
-	  double a0 = TT[i](idx,0)*l1;
-	  double a1 = TT[j](idx,1)*l2;
-	  double bpn = Sbvn(a0,a1,rho);
-	  ll[idx] += pr*bpn;
-	}
+	  double a0 = (TT[i](idx,0))/s1;
+	  double a1 = (TT[j](idx,1))/s2;
+	  double Fij = pr*Fbvn(a0,a1,rho); // F(T1<a0,T2<a1)
+	  ll[idx] -= Fij;
+ 	}
       }
     }
     for (int k=0; k<Idx.size(); k++) {
       unsigned idx = Idx[k]-1;
-      ll[idx] = log(ll[idx]);
+      ll[idx] = log(1-ll[idx]);
     }
   }
 
@@ -78,18 +108,16 @@ RcppExport SEXP bicif2(SEXP n, SEXP ad, SEXP ii, SEXP causes,
     if (Idx.size()>0) {
       save.push_back(causestr);            
       unsigned pos2 = 2*i+1;
-      // Marginal probability of cause "i"
-      double p2 = 0; for (unsigned j=0; j<ncauses; j++) p2 += Pr(i,j); 
       double s2 = Sigma(pos2,pos2); // Marginal variance of cause 
-      double val0 = log(p2) -0.5*(log2pi+log(s2));      
+      //      double val0 = log(p2) -0.5*(log2pi+log(s2));      
 
       for (int k=0; k<Idx.size(); k++) {
 	unsigned idx = Idx[k]-1;
 	double z = TT[i](idx,1);
-	double dz = TT[i](idx,3);
+	double logdz = TT[i](idx,3);
 	// += log(a2'(t2)) - log(f(a2(t2)))
-	ll[idx] = dz + val0 - 0.5*z*z/s2;    
-	ll[idx] = dz + log(p2) + Rf_dnorm4(z,0.0,sqrt(s2),1);
+	//	ll[idx] = dz + val0 - 0.5*z*z/s2;    
+	ll[idx] = logdz + log(Pmarg2[i]) + Rf_dnorm4(z,0.0,sqrt(s2),1);
       
 	double val = 0;
 	for (unsigned j=0; j<ncauses; j++) {
@@ -98,9 +126,9 @@ RcppExport SEXP bicif2(SEXP n, SEXP ad, SEXP ii, SEXP causes,
 	  double cov12 = Sigma(pos1,pos2);	  
 	  double condvar = Sigma(pos1,pos1)-cov12*cov12/s2;
 	  double condmean = cov12/s2*z;
-	  val += Pr(j,i)/p2*Rf_pnorm5(z1, condmean, sqrt(condvar), 0, 0); // upper tail, not log
+	  val += Pr(j,i)/Pmarg2[i]*Rf_pnorm5(z1, condmean, sqrt(condvar), 1, 0); // lower tail, not log
 	}
-	ll[idx] += log(val);
+	ll[idx] += log(1-val);
       }
     }
   }
