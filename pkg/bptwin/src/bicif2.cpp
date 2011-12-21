@@ -4,7 +4,7 @@ using namespace std;
 using namespace Rcpp;
 using namespace arma;
 
-RcppExport SEXP bicif(SEXP n, SEXP ad, SEXP ii, SEXP causes, 
+RcppExport SEXP bicif2(SEXP n, SEXP ad, SEXP ii, SEXP causes, 
 		      SEXP m, SEXP S, SEXP P) {
 
   GenericVector AD(ad);
@@ -38,7 +38,7 @@ RcppExport SEXP bicif(SEXP n, SEXP ad, SEXP ii, SEXP causes,
   
   mat Pmarg1 = sum(PP,1);
   mat Pmarg2 = sum(PP,0);
-    
+     
   //  for (unsigned i=0; i<ncauses; i++)
   //    cerr << "P" << i << "=" << Pmarg(i) << endl;
   // cerr << endl;

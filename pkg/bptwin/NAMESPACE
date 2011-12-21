@@ -15,11 +15,9 @@ export(
        CondMom,
        bptwin,
        bicomprisk,
-       bicomprisk0,
        biprobit,
        bpnd,
        npc,
-       bicomprisk,
        fastapprox       
 )
 

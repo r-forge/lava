@@ -1,4 +1,6 @@
-bicomprisk <- function(formula, data, cause=c(1,1), cens=0, causes, indiv, strata=NULL, id,num,sym=FALSE,ssym=FALSE,prodlim=FALSE,messages=TRUE,model,
+bicomprisk <- function(formula, data, cause=c(1,1), cens=0, causes,
+                       indiv,strata=NULL,id,num,sym=FALSE,ssym=FALSE,
+                       prodlim=FALSE,messages=TRUE,model,
                        return.data=0,...) {
   mycall <- match.call()
   formulaId <- Specials(formula,"id")
@@ -80,24 +82,13 @@ bicomprisk <- function(formula, data, cause=c(1,1), cens=0, causes, indiv, strat
        newpos[i] <- newpos[i] + ifelse(i%%2==1,1,-1)
     ww1 <- ww0[,newpos]; colnames(ww1) <- colnames(ww0)
     ww0 <- rbind(ww0,ww1)
-    ## suppressMessages(browser())  
-    ## switchers <- which(ww0[,causes2[1]]==cause[2] & ww0[,causes2[2]]==cause[1])
-    ## switchpos <- 1:4
-    ## if (length(indiv)>0)
-    ##   switchpos <- c(switchpos, seq_len(2*length(indiv))+4)
-    ## newpos <- switchpos
-    ## for (i in seq_len(length(newpos)))   
-    ##   newpos[i] <- newpos[i] + ifelse(i%%2==1,1,-1)
-    ## ww0[switchers,switchpos] <- ww0[switchers,newpos]
   }
   ww0 <- na.omit(ww0)
  
-  status <- rep(0,nrow(ww0))
-  time <- ww0[,timevar2[2]]
+  ##status <- rep(0,nrow(ww0))
+  ##time <- ww0[,timevar2[2]]
   mycauses <- setdiff(unique(data[,causes]),0)
-
   time <- status <- rep(0,nrow(ww0))
-  ##  time <- ww0[,"time.1"]
 
   ## cause = (i,j)
   primcond <- ww0[,causes2[1]]==cause[1] & ww0[,causes2[2]]==cause[2]
@@ -146,8 +137,6 @@ bicomprisk <- function(formula, data, cause=c(1,1), cens=0, causes, indiv, strat
   
   mydata0 <- mydata <- data.frame(time,status,ww0[,covars2],ww0[,indiv2])
   names(mydata) <- c(timevar,causes,covars,indiv2)
-
-
   
   if (!prodlim) {
     ff <- paste("Surv(",timevar,",",causes,"!=",cens,") ~ 1",sep="")
@@ -182,7 +171,6 @@ plot.bicomprisk <- function(x,add=FALSE,...) {
   }
   return(invisible(x))
 }
-
 
 conc2case <- function(conc,marg) {
   out <- conc

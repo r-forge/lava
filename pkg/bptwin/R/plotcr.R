@@ -1,25 +1,43 @@
 ###{{{ plotcr
 
-plotcr <- function(x,col,legend=TRUE,which=1:2,
-                   ask = prod(par("mfcol")) < length(which) && dev.interactive(),
-                   ...) {
+plotcr <- function(x,col,lty,legend=TRUE,which=1:2,
+                   ask = prod(par("mfcol")) < length(which) && dev.interactive(), ...) {
   dots <- list(...)
   if (is.null(dots$xlab)) dots$xlab <- "Time"
-  if ((!is.data.frame(x) | !is.matrix(x)) && ncol(x)<2) stop("Wrong type of data")
+  if ((!is.data.frame(x) | !is.matrix(x)) && ncol(x)<2) stop("Wrong type of data")  
   if (ncol(x)==2) {
     if (is.null(dots$curvlab)) {
       causes <- setdiff(unique(x[,2]),0)
       dots$curvlab <- seq(length(causes))
     }
-    co <- cuminc(x[,1],x[,2])
-    if (any(x[,1]<0)) {
-      for (i in seq(length(co))) {
-        co[[i]]$time <- co[[i]]$time[-1]
-        co[[i]]$est <- co[[i]]$est[-1]
-      }
-      if (is.null(dots$xlim)) dots$xlim <- range(x[,1])
-    }
+    colnames(x)[1:2] <- c("t","status")
+    co <- prodlim(Hist(t,status)~1,data=data.frame(x))
+    ##    co <- cuminc(x[,1],x[,2])
+    ##    if (any(x[,1]<0)) {
+    ##      do.call(co,p)
+    ## for (i in seq(length(co))) {
+    ##   co[[i]]$time <- co[[i]]$time[-1]
+    ##   co[[i]]$est <- co[[i]]$est[-1]
+    ## }
+    ##if (is.null(dots$xlim)) dots$xlim <- range(x[,1])
+    ##    }
+    ##do.call("plot", c(list(x=co), dots))
+    if (is.null(dots$lwd)) dots$lwd <- 1
+    if (missing(lty)) lty <- seq_len(length(co$cuminc))
+    if (missing(col)) col <- rep(1,length(co$cuminc))
+    if (is.null(dots$lwd)) dots$lwd <- 1
+    dots$lty <- lty[1]
+    dots$col <- col[1]
     do.call("plot", c(list(x=co), dots))
+    dots$add <- TRUE
+    for (i in seq_len(length(co$cuminc)-1)+1) {
+      dots$lty <- lty[i]
+      dots$col <- col[i]
+      dots$cause <- i
+      do.call("plot", c(list(x=co), dots))
+    }
+    if (legend)
+      legend("topleft",names(co$cuminc),col=col,lty=lty,pch=-1)
     return(invisible(co))
   }
 
@@ -27,13 +45,14 @@ plotcr <- function(x,col,legend=TRUE,which=1:2,
     oask <- devAskNewPage(TRUE)
     on.exit(devAskNewPage(oask))
   }
-  
-  t <- x[,1:2]; cause <- x[,3:4]
+
+  t <- as.matrix(x[,1:2]); cause <- as.matrix(x[,3:4])
   causes <- sort(setdiff(unique(cause),0))
   if (is.null(dots$curvlab))
     dots$curvlab <- seq(1:length(unique(causes)))
   if (missing(col)) col <- c("seagreen","darkred","darkblue","goldenrod","mediumpurple")
   if (1%in%which) {
+    browser()
     plot(t,type="n",...)
     count <- 1
     for (i in causes) {
@@ -48,22 +67,28 @@ plotcr <- function(x,col,legend=TRUE,which=1:2,
                         "Double Censoring"), pch=c(2,6,2,6,1), col=c(rep(col[1:length(causes)],each=2),"black"))
   }
   if (2%in%which) {
-    co1 <- cuminc(t[,1],cause[,1])
-    co2 <- cuminc(t[,2],cause[,2])
-    if (any(t[,1]<0)) {
-      for (i in seq(length(co1))) {
-        co1[[i]]$time <- co1[[i]]$time[-1]
-        co1[[i]]$est <- co1[[i]]$est[-1]
-      }
-      for (i in seq(length(co2))) {
-        co2[[i]]$time <- co1[[i]]$time[-1]
-        co2[[i]]$est <- co1[[i]]$est[-1]
-      }
+    colnames(x)[1:4] <- c("t1","t2","cause1","cause2")
+
+    co1 <- prodlim(Hist(t1,cause1)~1,data.frame(x))
+    co2 <- prodlim(Hist(t2,cause2)~1,data.frame(x))
+    if (is.null(dots$lwd)) dots$lwd <- 1
+    if (missing(lty)) lty <- seq_len(length(co1$cuminc))
+    if (missing(col)) col <- rep(1,length(co1$cuminc))
+    if (is.null(dots$lwd)) dots$lwd <- 1
+    dots$lty <- lty[1]
+    dots$col <- col[1]    
+    do.call("plot", c(list(x=co1), dots))    
+    dots$add <- TRUE
+    do.call("plot", c(list(x=co2), dots))    
+    for (i in seq_len(length(co1$cuminc)-1)+1) {
+      dots$lty <- lty[i]
+      dots$col <- col[i]
+      dots$cause <- i
+      do.call("plot", c(list(x=co1), dots))
+      do.call("plot", c(list(x=co2), dots))  
     }
-    if (is.null(dots$xlim)) dots$xlim <- range(t)
-    do.call("plot", c(list(x=co1), dots))
-    for (i in seq(length(co2)))
-      with(co2[[i]], lines(time,est,type="s",lty=i,...))
+    if (legend)
+      legend("topleft",names(co1$cuminc),col=col,lty=lty,pch=-1,bg="white")
   }
 }
 
