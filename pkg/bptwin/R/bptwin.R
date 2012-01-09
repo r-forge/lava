@@ -562,7 +562,7 @@ bptwin <- function(formula, data, id, zyg, DZ, DZos,
   npar[unlist(lapply(npar,length))==0] <- 0
 ##  npar$var <- nrow(cc)-sum(unlist(npar))
   
-  val <- list(coef=cc,vcov=V,score=UU,logLik=attributes(UU)$logLik,opt=op, Sigma0=S$Sigma0, Sigma1=S$Sigma1, dS0=dS0, dS1=dS1, N=N, midx0=midx0, midx1=midx1, vidx0=vidx0, vidx1=vidx1, eqmean=eqmean, I=I,J=J,
+  val <- list(coef=cc,vcov=V,score=UU,logLik=attributes(UU)$logLik,opt=op, Sigma0=S$Sigma0, Sigma1=S$Sigma1, dS0=dS0, dS1=dS1, N=N, midx0=midx0, midx1=midx1, vidx0=vidx0, vidx1=vidx1, eqmean=eqmean, I=I,J=J, robustvar=robustvar,
               transform=list(tr=mytr, invtr=myinvtr, dtr=dmytr,
                 name=trname, invname=invtrname),
               SigmaFun=Sigma, ##MuFun=Mu,
