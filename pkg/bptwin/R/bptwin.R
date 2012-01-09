@@ -346,23 +346,55 @@ bptwin <- function(formula, data, id, zyg, DZ, DZos,
     }
 
     if (indiv) {
-      val <- matrix(0,ncol=plen,nrow=nrow(U0$score)+nrow(U1$score))
-      val[seq_len(nrow(U0$score)),c(bidx0,vidx0)] <- U0$score
-      val[nrow(U0$score)+seq_len(nrow(U1$score)),c(bidx1,vidx1)] <- U1$score
+
+
+      val0 <- U0$score[MyData0$id,,drop=FALSE]
+      val1 <- U1$score[MyData1$id,,drop=FALSE]
+      N0 <- length(MyData0$id)
+      idxs0 <- seq_len(N0)
+      for (i in seq_len(N0)) {
+        idx0 <- which((MyData0$idmarg)==(MyData0$id[i]))+N0
+        idxs0 <- c(idxs0,idx0)
+        val0[i,] <- val0[i,]+colSums(U0$score[idx0,,drop=FALSE])
+      }
+      val0 <- rbind(val0, U0$score[-idxs0,,drop=FALSE])
+      N1 <- length(MyData1$id)
+      idxs1 <- seq_len(N1)
+      for (i in seq_len(N1)) {
+        idx1 <- which((MyData1$idmarg)==(MyData1$id[i]))+N1
+        idxs1 <- c(idxs1,idx1)
+        val1[i,] <- val1[i,]+colSums(U1$score[idx1,,drop=FALSE])
+      }
+      val1 <- rbind(val1, U1$score[-idxs1,,drop=FALSE])
+
+      val <- matrix(0,ncol=plen,nrow=nrow(val0)+nrow(val1))
+      val[seq_len(nrow(val0)),c(bidx0,vidx0)] <- val0
+      val[nrow(val0)+seq_len(nrow(val1)),c(bidx1,vidx1)] <- val1
       for (ii in vidx) {
         val[,ii] <- val[,ii]*dmytr(p[ii])
       }
-      ## if (Bconstrain & Blen>0) {
-      ##   Bidx <- attributes(b00)$idx
-      ##   val[,Bidx] <- as.numeric((val[,Bidx,drop=FALSE])%*%attributes(b00)$D[Bidx,Bidx,drop=FALSE])
-      ##   if (!eqmean) {
-      ##     Bidx <- bidx1[attributes(b11)$idx]
-      ##     val[,Bidx] <- as.numeric((val[,Bidx,drop=FALSE])%*%attributes(b11)$D[attributes(b11)$idx,attributes(b11)$idx])
-      ##   }
-      ## }      
       attributes(val)$logLik <- c(U0$loglik,U1$loglik)
       return(val)
-    }    
+      
+#########      
+      ## val <- matrix(0,ncol=plen,nrow=nrow(U0$score)+nrow(U1$score))
+      ## val[seq_len(nrow(U0$score)),c(bidx0,vidx0)] <- U0$score
+      ## val[nrow(U0$score)+seq_len(nrow(U1$score)),c(bidx1,vidx1)] <- U1$score
+      ## for (ii in vidx) {
+      ##   val[,ii] <- val[,ii]*dmytr(p[ii])
+      ## }
+      ## ## if (Bconstrain & Blen>0) {
+      ## ##   Bidx <- attributes(b00)$idx
+      ## ##   val[,Bidx] <- as.numeric((val[,Bidx,drop=FALSE])%*%attributes(b00)$D[Bidx,Bidx,drop=FALSE])
+      ## ##   if (!eqmean) {
+      ## ##     Bidx <- bidx1[attributes(b11)$idx]
+      ## ##     val[,Bidx] <- as.numeric((val[,Bidx,drop=FALSE])%*%attributes(b11)$D[attributes(b11)$idx,attributes(b11)$idx])
+      ## ##   }
+      ## ## }      
+      ## attributes(val)$logLik <- c(U0$loglik,U1$loglik)
+      ## return(val)
+      
+    }
     val <- numeric(plen)
     val[c(bidx0,vidx0)] <- colSums(U0$score)
     val[c(bidx1,vidx1)] <- val[c(bidx1,vidx1)]+colSums(U1$score)
@@ -1078,7 +1110,15 @@ biprobit <- function(formula, data, id, time, strata=NULL, eqmarg=TRUE,
     }
 
     if (indiv) {
-      val <- U$score
+      val <- U$score[MyData$id,,drop=FALSE]
+      N <- length(MyData$id)
+      idxs <- seq_len(N)
+      for (i in seq_len(N)) {
+        idx <- which((MyData$idmarg)==(MyData$id[i]))+N
+        idxs <- c(idxs,idx)
+        val[i,] <- val[i,]+colSums(U$score[idx,,drop=FALSE])
+      }
+      val <- rbind(val, U$score[-idxs,,drop=FALSE])
       attributes(val)$logLik <- U$loglik
       return(val)
     }
@@ -1164,13 +1204,16 @@ biprobit <- function(formula, data, id, time, strata=NULL, eqmarg=TRUE,
 
 ###{{{ utilities
  
-ExMarg <- function(Y0,XX0,W0,dS0,midx1=seq(ncol(XX0)/2),midx2=seq(ncol(XX0)/2)+ncol(XX0)/2,eqmarg=TRUE,allmarg=FALSE) {
+ExMarg <- function(Y0,XX0,W0,dS0,midx1=seq(ncol(XX0)/2),midx2=seq(ncol(XX0)/2)+ncol(XX0)/2,eqmarg=TRUE,allmarg=FALSE) {  
   ii1 <- which(is.na(Y0[,2]) & !is.na(Y0[,1]))
   ii2 <- which(is.na(Y0[,1]) & !is.na(Y0[,2]))
   ii0 <- which(is.na(Y0[,1]) & is.na(Y0[,2]))
   margidx <- c(ii1,ii2)  
   if (allmarg) {
     both <- setdiff(seq(nrow(Y0)),c(ii1,ii2,ii0))
+    id <- seq_len(length(both))
+    id1 <- c(seq_len(length(ii1))+length(id), id)
+    id2 <- c(seq_len(length(ii2))+length(id)+length(id1), id)
     ii1 <- c(ii1,both)
     ii2 <- c(ii2,both)
   }
@@ -1196,6 +1239,8 @@ ExMarg <- function(Y0,XX0,W0,dS0,midx1=seq(ncol(XX0)/2),midx2=seq(ncol(XX0)/2)+n
               Y0_marg=Y0_marg, XX0_marg=XX0_marg,
               X0_marg1=X0_marg1, X0_marg2=X0_marg2,
               dS0_marg=dS0_marg, W0_marg=W0_marg,
+              id=id, idmarg=c(id1,id2),
+              ii1=ii1,
               margidx=margidx)
 }
 
