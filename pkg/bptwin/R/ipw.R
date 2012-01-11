@@ -5,16 +5,27 @@ ipw <- function(formula,data,cluster,samecens=FALSE,obsonly=TRUE,weightname="w",
   otimes <- data[,timevar]
   utimes <- sort(unique(otimes))
   delta <- min(diff(c(0,utimes)))/2 ## We want prediction just before event
-  pr <- c()
-##  if (length(attributes(terms(formula))$term.labels)) {    
-##    fit <- cph(formula,data=data,surv=TRUE,x=TRUE,y=TRUE)
-##    pr <- survest(fit,what="parallel",newdata=data,
-##                    times=otimes-delta)
-##  } else { ## cph does not work without covariates.. Kaplan-Meier:
+  ##  if (length(attributes(terms(formula))$term.labels)) {    
+  ##    fit <- cph(formula,data=data,surv=TRUE,x=TRUE,y=TRUE)
+  ##    pr <- survest(fit,what="parallel",newdata=data,
+  ##                    times=otimes-delta)
+  ##  } else { ## cph does not work without covariates.. Kaplan-Meier:
+  
+  ##  }
   fit <- survfit(formula,data=data);
-  Gfit <- cbind(fit$time,fit$surv)
-  pr <- fastapprox(Gfit[,1],otimes-delta,Gfit[,2])[[1]]
-##  }
+  sfit <- summary(fit)
+  stratas <- fit$strata
+  if (is.null(stratas)) {    
+    Gfit <- cbind(fit$time,fit$surv)
+    pr <- fastapprox(Gfit[,1],otimes-delta,Gfit[,2])[[1]]
+    ##    Gfit2<-rbind(c(0,1),Gfit); 
+    ##    pr<-Cpred(Gfit2,otimes)[,2];
+  } else {
+    for (s in stratas) {
+      
+    }
+  }
+ 
   noncens <- with(data,!eval(terms(formula)[[2]][[3]]))
   data[,weightname] <- pr  
   if (samecens & !missing(cluster)) {

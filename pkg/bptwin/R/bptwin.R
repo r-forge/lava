@@ -722,8 +722,6 @@ summary.bptwin <- function(object,level=0.05,...) {
   rownames(Nstr) <- ""
   colnames(Nstr) <- unlist(lapply(strsplit(colnames(object$N)[npos*2-1],".",fixed=TRUE),
                                   function(x) paste(x[1], "MZ/DZ")))
-  
-  
   res <- list(object=object, h=hval,
               probMZ=probMZ, probDZ=probDZ, Nstr=Nstr,
               coef=newcoef) ##, concordance=concordance, conditional=conditional)
@@ -735,6 +733,7 @@ print.summary.bptwin <- function(x,digits = max(3, getOption("digits") - 2),...)
   cat("\n")
   print(x$object,digits=digits,...)
   cat("\n")
+  x$Nstr <- x$Nstr[,which((colnames(x$Nstr)!="Complete MZ/DZ")),drop=FALSE]
   print(x$Nstr,quote=FALSE)
   cat("\n")
   print(RoundMat(x$coef[,-2,drop=FALSE],digits=digits),quote=FALSE)
