@@ -347,7 +347,6 @@ bptwin <- function(formula, data, id, zyg, DZ, DZos,
 
     if (indiv) {
 
-
       val0 <- U0$score[MyData0$id,,drop=FALSE]
       val1 <- U1$score[MyData1$id,,drop=FALSE]
       N0 <- length(MyData0$id)
@@ -1202,15 +1201,17 @@ biprobit <- function(formula, data, id, time, strata=NULL, eqmarg=TRUE,
 ###}}} biprobit
 
 ###{{{ utilities
- 
+
 ExMarg <- function(Y0,XX0,W0,dS0,midx1=seq(ncol(XX0)/2),midx2=seq(ncol(XX0)/2)+ncol(XX0)/2,eqmarg=TRUE,allmarg=FALSE) {  
   ii1 <- which(is.na(Y0[,2]) & !is.na(Y0[,1]))
   ii2 <- which(is.na(Y0[,1]) & !is.na(Y0[,2]))
   ii0 <- which(is.na(Y0[,1]) & is.na(Y0[,2]))
-  margidx <- c(ii1,ii2)  
+  margidx <- c(ii1,ii2)
+  id1 <- id2 <-  NULL
+  both <- setdiff(seq(nrow(Y0)),c(ii1,ii2,ii0))
+  id <- seq_len(length(both))
   if (allmarg) {
-    both <- setdiff(seq(nrow(Y0)),c(ii1,ii2,ii0))
-    id <- seq_len(length(both))
+    ##    id <- seq_len(length(both))
     id1 <- c(seq_len(length(ii1))+length(id), id)
     id2 <- c(seq_len(length(ii2))+length(id)+length(id1), id)
     ii1 <- c(ii1,both)
