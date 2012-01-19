@@ -32,7 +32,6 @@ clprobit <- function(x,data,k=2,type=c("nearest","all"),pairlist,silent=TRUE,
     for (i in seq(ncol(mypar0)))
       mypar <- c(mypar, list(mypar0[,i]))
   }
-  browser()
   
   nblocks <- length(mypar)
   mydata0 <- data[c(),,drop=FALSE]  
