@@ -11,8 +11,8 @@
 \tabular{ll}{
 Package: \tab bptwin\cr
 Type: \tab Package\cr
-Version: \tab 0.6-1\cr
-Date: \tab 2011-01-12\cr
+Version: \tab 0.6-2\cr
+Date: \tab 2011-01-20\cr
 License: \tab GPL (>=2)\cr
 URL: http://r-forge.r-project.org/projects/lava/
 LazyLoad: \tab yes\cr

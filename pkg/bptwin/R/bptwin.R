@@ -346,26 +346,28 @@ bptwin <- function(formula, data, id, zyg, DZ, DZos,
     }
 
     if (indiv) {
-
       val0 <- U0$score[MyData0$id,,drop=FALSE]
       val1 <- U1$score[MyData1$id,,drop=FALSE]
       N0 <- length(MyData0$id)
       idxs0 <- seq_len(N0)
-      for (i in seq_len(N0)) {
-        idx0 <- which((MyData0$idmarg)==(MyData0$id[i]))+N0
-        idxs0 <- c(idxs0,idx0)
-        val0[i,] <- val0[i,]+colSums(U0$score[idx0,,drop=FALSE])
+      if (length(MyData0$margidx)>0) {
+        for (i in seq_len(N0)) {
+          idx0 <- which((MyData0$idmarg)==(MyData0$id[i]))+N0
+          idxs0 <- c(idxs0,idx0)
+          val0[i,] <- val0[i,]+colSums(U0$score[idx0,,drop=FALSE])
+        }
+        val0 <- rbind(val0, U0$score[-idxs0,,drop=FALSE])
       }
-      val0 <- rbind(val0, U0$score[-idxs0,,drop=FALSE])
       N1 <- length(MyData1$id)
       idxs1 <- seq_len(N1)
-      for (i in seq_len(N1)) {
-        idx1 <- which((MyData1$idmarg)==(MyData1$id[i]))+N1
-        idxs1 <- c(idxs1,idx1)
-        val1[i,] <- val1[i,]+colSums(U1$score[idx1,,drop=FALSE])
+      if (length(MyData1$margidx)>0) {
+        for (i in seq_len(N1)) {
+          idx1 <- which((MyData1$idmarg)==(MyData1$id[i]))+N1
+          idxs1 <- c(idxs1,idx1)
+          val1[i,] <- val1[i,]+colSums(U1$score[idx1,,drop=FALSE])
+        }
+        val1 <- rbind(val1, U1$score[-idxs1,,drop=FALSE])
       }
-      val1 <- rbind(val1, U1$score[-idxs1,,drop=FALSE])
-
       val <- matrix(0,ncol=plen,nrow=nrow(val0)+nrow(val1))
       val[seq_len(nrow(val0)),c(bidx0,vidx0)] <- val0
       val[nrow(val0)+seq_len(nrow(val1)),c(bidx1,vidx1)] <- val1
@@ -510,7 +512,6 @@ bptwin <- function(formula, data, id, zyg, DZ, DZos,
     ##   res <- structure(sum(l), grad=colSums(s))
     ##   res
     ## }
-    ## browser()
     
     UU <- U(op$par,indiv=TRUE)
     I <- -numDeriv::jacobian(U,op$par)
@@ -527,7 +528,6 @@ bptwin <- function(formula, data, id, zyg, DZ, DZos,
     UU <- matrix(NA,ncol=length(op$par),nrow=1)
     I <- J <- V <- matrix(NA,ncol=length(op$par),nrow=length(op$par))
   }
-
   ###}}} optim
 
 ###{{{ return
