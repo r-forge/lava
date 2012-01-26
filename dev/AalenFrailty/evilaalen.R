@@ -1,4 +1,4 @@
-##install(c("Rcpp","RcppArmadillo","inline"))
+##install.packages(c("Rcpp","RcppArmadillo","inline"))
 library(RcppArmadillo)
 library(inline)
 
