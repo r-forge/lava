@@ -33,3 +33,11 @@ outs <- aalen(Surv(timent,status==9) ~ const(vf)+const(chf)+const(sex),data=ktra
 c(outs$intZHdN)-outss$d
 outs$intZHZ - outss$D
 
+
+X <- model.matrix(~1,ktrace)
+Z <- model.matrix(~-1+vf+chf+sex,ktrace)
+t <- ktrace$time
+dix <- which(ktrace$status==9)
+dt <- diff(c(0,t[dix]))
+system.time(B <- semiaalen(dix,t,X,Z))
+

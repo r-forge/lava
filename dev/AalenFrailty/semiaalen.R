@@ -1,86 +1,163 @@
 library(RcppArmadillo)
 library(inline)
 
-src1 <- '
-#include <vector>
-using namespace arma;
-try {
-      colvec   event = Rcpp::as<colvec>(ds);
-      colvec      t = Rcpp::as<colvec>(ts);
-      mat         X = Rcpp::as<mat>(Xs);
-      mat         Z = Rcpp::as<mat>(Zs);
-      mat b = zeros(event.n_rows,X.n_cols);
-      mat Xc = zeros<mat>(X.n_cols,X.n_cols);
-      colvec Ht(event.n_rows);
-      colvec dt(event.n_rows);
-      colvec zHz(event.n_rows);
-      mat zH(event.n_rows,Z.n_cols);
-      unsigned stop,start = X.n_rows;
-      mat I = eye(Z.n_cols,Z.n_cols);
-      mat zz;
-      mat H;
-      for (unsigned i=0; i<event.n_rows; i++) {
-         unsigned ri = event.n_rows-i-1;
-         stop  = start-1;
-         start = event(ri)-1;
-         mat Xi = X(span(start,stop), span::all);
-         Xc = Xc + Xi.st()*Xi;
-         mat U, V; vec s; 
-         svd(U,s,V,Xc);
-         mat Xci = U*diagmat(1/s)*V.st();
-         mat Xpinv = Xci*trans(X.row(start));
-         //         Xpinvs.push_back(Xpinv);
-         b.row(ri) = trans(Xpinv);
-//         mat XProj = Xc*Xci*trans(Xc);
-//         cerr << XProj << endl;
-         //         Xpinvs.push_back(Xpinv);
-         Ht(ri) = 1-as_scalar(X.row(start)*Xpinv);
-         for (unsigned k=0; k<s.n_elem; k++) if (s(k)<1.0e-15) Ht(ri)=0;
-         zH.row(ri) = Z.row(start)*Ht(ri);
-         zHz(ri) = as_scalar((zH.row(ri))*(Z.row(i).st()));
-         zz = Z*Xc*Xci*trans(Xc)*trans(Z);
-//         if (i==0) break;
-     }
-     
+con <- file("semiaalen.cpp"); src1 <- readLines(con); close(con)
+semiaalen <- function(eventidx,time,X,Z,dt=NULL,gammas=NULL,allt=FALSE) csemiaalen(eventidx,time,X,Z,dt,gammas,allt)
+csemiaalen <- cxxfunction(signature(ds="numeric", ts="numeric",
+                                   Xs="numeric", Zs="numeric",
+                                   dts="numeric", gammas="numeric",
+                                   allt="boolean"),
+                         paste(src1,collapse="\n"),
+                         plugin="RcppArmadillo", verbose=TRUE)
 
-      colvec gamma(Z.n_cols);   
-      mat B = cumsum(b);
-      return(Rcpp::List::create(Rcpp::Named("zH")=zH,
-                                Rcpp::Named("zHz")=zHz,
-                                Rcpp::Named("zz")=zz,
-                                Rcpp::Named("B")=B));
-  } catch( std::exception &ex ) {
-        forward_exception_to_r( ex );
-  } catch(...) { 
-       ::Rf_error( "c++ exception (unknown reason)" ); 
-  }
-  return R_NilValue; // -Wall
-'
+t1 <- system.time(B1 <- semiaalen(event,t,X,Z,allt=FALSE))
 
-semiaalen <- cxxfunction(signature(ds="numeric", ts="numeric",
-                                   Xs="numeric", Zs="numeric"),
-                         src1,plugin="RcppArmadillo", verbose=TRUE)
+t1 <- t[which(event==1)]
+event1 <- rep(1,length(t1))
+t2 <- system.time(B2 <- semiaalen(event1,t1,X,Z))
 
-X <- model.matrix(~1+age,sTRACE)
-Z <- model.matrix(~-1+sex+chf,sTRACE)
-t <- sTRACE$time
-dix <- which(sTRACE$status==9)
+
+
+library(timereg)
+data(sTRACE)
+dd <- sTRACE
+for (i in seq((NULL))) dd <- rbind(dd,dd)
+## <- sTRACE
+dd$time <- dd$time+runif(nrow(dd),0,1e-8)
+dd <- dd[order(dd$time),]
+X <- model.matrix(~1+chf,dd)
+Z <- model.matrix(~-1+sex+age,dd)
+t <- dd$time
+event <- (dd$status==9)*1
+dix <- which(dd$status==9)
+dt0 <- diff(c(0,t[dix]))
+t1 <- system.time(B <- semiaalen(event,t,X,Z,NULL,NULL))
+system.time(out<-aalen(Surv(time,status==9)~1+chf+const(sex)+const(age),dd,n.sim=0,robust=0))
+
+
+system.time(out<-aalen(Surv(time,status==9)~1+chf+const(sex)+const(age),dd,n.sim=0,robust=0))
+
+
+
+dt <- diff(c(0,t))
+
+system.time(B <- semiaalen(dix,t,X,Z,dt))
+
+
+system.time(out<-aalen(Surv(time,status==9)~1+chf+const(sex)+const(age),dd,n.sim=0,robust=0))
+
+
+system.time(out<-aalen(Surv(time,status==9)~1+chf+const(sex)+const(age),dd,n.sim=0,robust=0))#max.time=7.5))
+(b <- coef(out))
+out$intZHdN
+out$intZHZ
+system.time(B <- semiaalen(dix,t,X,Z,dt,coef(out)[,1]))
+system.time(B <- semiaalen(dix,t,X,Z,dt,NULL))
+idx <- 1
+plot(out$cum[,c(1,idx+1)],type="s")
+lines(cbind(t[dix],B$B[,idx]),type="s",col=Col("darkred",0.4),lwd=5)
+
+
+
+library(timereg)
+data(sTRACE)
+dd <- sTRACE
+for (i in seq((NULL))) dd <- rbind(dd,dd)
+## <- sTRACE
+dd$time <- dd$time+runif(nrow(dd),0,1e-8)
+dd <- dd[order(dd$time),]
+X <- model.matrix(~1+chf,dd)
+Z <- model.matrix(~-1+sex+age,dd)
+t <- dd$time
+dix <- which(dd$status==9)
+t1 <- system.time(B <- semiaalen(dix,t,X,Z,NULL,NULL))
+t2 <- system.time(out<-aalen(Surv(time,status==9)~1+chf+const(sex)+const(age),dd,n.sim=0,robust=0))#max.time=7.5))
+res <- c(t1[1],t2[1],B$gamma[,1],coef(out)[,1])
+
+
+
+X <- model.matrix(~1+chf,dd)
+Z <- model.matrix(~-1+sex+age,dd)
+t <- dd$time
+dix <- which(dd$status==9)
 dt <- diff(c(0,t[dix]))
+system.time(B <- semiaalen(dix,t,X,Z,dt))
+B$gamma
 
-system.time(B <- semiaalen(dix,t,X,Z))
+system.time(out<-aalen(Surv(time,status==9)~1+chf+const(sex)+const(age),dd,n.sim=0,robust=0))#max.time=7.5))
+(b <- coef(out))
+out$intZHdN
+out$intZHZ
+system.time(B <- semiaalen(dix,t,X,Z,dt))
+plot(out$cum,type="s")
+lines(cbind(t[dix],B$B),type="s",col=Col("darkred",0.4),lwd=5)
 
-colSums(B$zH)/sum(B$zHz*dt)
+surv <- with(dd,Surv(time+runif(nrow(dd),0,0.0001),status==9))
+library(ahaz)
+system.time(outss <- ahaz(surv,Z))
+
 
 library(timereg)
 library(bsplot)
 data(sTRACE)
 sTRACE <- sTRACE[order(sTRACE$time),]
-system.time(out<-aalen(Surv(time,status==9)~1+const(sex)+const(chf)+age,sTRACE,max.time=9,n.sim=0,robust=0))
-b <- coef(out)
-
-system.time(B <- EvilAalen(dix,X))
-
-system.time(out<-aalen(Surv(time,status==9)~1+age,sTRACE,max.time=9,n.sim=0,robust=0))
-idx <- 2
+system.time(out<-aalen(Surv(time,status==9)~1+const(sex)+const(age),sTRACE,n.sim=0,robust=0))
+(b <- coef(out))
+idx <- 1
 plot(out,specific.comps=idx)
 points(t[dix],B$B[,idx],type="s",col=Col(2),lwd=7)
+
+
+
+
+##system.time(B <- EvilAalen(dix,X))
+
+system.time(out<-aalen(Surv(time,status==9)~1,sTRACE,max.time=9,n.sim=0,robust=0))
+idx <- 1
+plot(out,specific.comps=idx)
+points(t[dix],B$B[,idx],type="s",col=Col(2),lwd=7)
+
+
+##################################################
+### Benchmark
+##################################################
+f <- function(rep=NULL) {
+  message(rep)
+  library(timereg)
+  data(sTRACE)
+  dd <- sTRACE
+  for (i in seq((rep))) dd <- rbind(dd,dd)
+  ## <- sTRACE
+  dd$time <- dd$time+runif(nrow(dd),0,1e-8)
+  dd <- dd[order(dd$time),]
+  X <- model.matrix(~1+chf,dd)
+  Z <- model.matrix(~-1+sex+age,dd)
+  t <- dd$time
+  dix <- which(dd$status==9)
+  t1 <- system.time(B <- semiaalen(dix,t,X,Z,NULL,NULL))
+  res <- c()
+  if (rep<9) {
+    t2 <- system.time(out<-aalen(Surv(time,status==9)~1+chf+const(sex)+const(age),dd,n.sim=0,robust=0))#max.time=7.5))
+    res <- c(n=nrow(dd),t.kkho=t1[1],t.ts=t2[1],B$gamma[,1],coef(out)[,1])
+  } else {
+    res <- c(n=nrow(dd),t.kkho=t1[1],t.ts=NA,B$gamma[,1],NA,NA)
+  }
+  return(res)
+}
+
+library(foreach)
+res <- foreach(i=1:11) %do% f(i)
+
+par(mfrow=c(1,2))
+M <- matrix(unlist(res),byrow=TRUE,ncol=7)
+plot(M[,1],M[,3],col="red",type="l")
+lines(M[,1],M[,2])
+legend("topleft",c("timereg::aalen","semiaalen"),lty=1,col=2:1)
+plot(M[1:8,1],M[1:8,3],col="red",type="l")
+lines(M[,1],M[,2])
+
+
+dev.copy2pdf(file="test.pdf")
+
+plot(M[,1],sqrt(M[,3]),col="red",type="l")
+lines(M[,1],sqrt()(M[,2]))
