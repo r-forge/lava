@@ -1,8 +1,8 @@
 Package: bptwin
 Type: Package
 Title: Cumulative incidence models for twin data 
-Version: 0.6-2
-Date: 2011-01-20
+Version: 0.6-3
+Date: 2011-02-07
 Author: Klaus K. Holst
 Maintainer: Klaus K. Holst <k.k.holst@biostat.ku.dk>
 Description: Bivariate probit model (Liability model) and cumulative incidence models with right censoring and left truncation

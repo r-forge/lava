@@ -32,6 +32,7 @@ S3method(print, "summary.biprobit")
 S3method(summary, "bptwin")
 S3method(print, "summary.bptwin")
 
+S3method(print, "do.biprobit.strata")
 S3method(print, "biprobit.strata")
 S3method(coef, "biprobit.strata")
 S3method(summary, "biprobit.strata")

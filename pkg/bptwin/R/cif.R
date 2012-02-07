@@ -146,7 +146,7 @@ predict.cif <- function(object,cause=c(1,1),t,...) {
 ##    p <- object$P[cause[1],cause[2]]*apply(l$a[,cause+1],1,function(x) pmvnorm(lower=x,sigma=S))
   } else {
     S <- object$Sigma[(cause[1]-1)*2+1,(cause[1]-1)*2+1]
-    p <- sum(object$P[cause[1],])*pnorm(upper=x,sigma=S^0.5)
+    p <- sum(object$P[cause[1],])*pnorm(upper=x,sd=S^0.5)
   }
   return(cbind(a[,1],p))  
 }
