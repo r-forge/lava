@@ -204,10 +204,11 @@ plot.cif <- function(x,col=c("seagreen","darkred","darkblue","goldenrod","medium
         P[upper.tri(P)] <- P[lower.tri(P)]
         P1 <- rowSums(P)
         y <- P1[whichcause[1]]*pnorm(ll$a[,whichcause[1]+1],sd=1)
-        if (cause[i,1]==cause[i,2])
-          lines(ll$a[,1],y,col=col[i],lwd=1,lty=3)
-        y <- y*P1[whichcause[2]]*pnorm(ll$a[,whichcause[2]+1],sd=1)
-        lines(ll$a[,1],y,col=col[i],lwd=1,lty=3)
+        if (cause[i,1]==cause[i,2]) {
+##          lines(ll$a[,1],y,col=col[i],lwd=1,lty=3)
+          y <- y*P1[whichcause[2]]*pnorm(ll$a[,whichcause[2]+1],sd=1)
+ ##         lines(ll$a[,1],y,col=col[i],lwd=1,lty=3)
+        }
       }
     }
     labs <- apply(cause,1,function(x) paste(x,collapse=","))

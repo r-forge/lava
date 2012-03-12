@@ -89,6 +89,15 @@ summary.bptwin <- function(object,level=0.05,...) {
   concordance <-  conditional <- marg <- c()
 
   probs <- function(p,idx=1) {
+    if (idx==0) {
+      m <- p[1]
+      ##else m <- p[length(object$midx0)+1]
+      S <- object$SigmaFun(p)
+      conc1 <- pmvnorm(upper=c(m,m),sigma=S[[1]],algorithm="Miwa")
+      conc2 <- pmvnorm(upper=c(m,m),sigma=S[[2]],algorithm="Miwa")
+      marg <- pnorm(m,sd=S[[1]][1,1]^0.5)      
+      return(logit((conc1-conc2)/(marg*(1-marg))))
+    }
     S <- (object$SigmaFun(p))[[idx]]
     m <- 0
     if((object$npar$intercept==1 & idx==1) | object$eqmean) m <- p[1]
@@ -100,11 +109,16 @@ summary.bptwin <- function(object,level=0.05,...) {
     cond <- conc/marg
     logit(c(conc,cond,marg))
   }
-
-  mycoef <- coef(object)  
+   
+  mycoef <- coef(object)
+  formals(probs) <- alist(p=,idx=0)
+  hp <- probs(mycoef)
+  Dhp <- grad(probs,mycoef)
+  shp <- diag(t(Dhp)%*%vcov(object)%*%(Dhp))^0.5
+  
   formals(probs) <- alist(p=,idx=1)
   probMZ <- probs(mycoef)
-
+  
   Dp0 <- jacobian(probs,mycoef)
   formals(probs) <- alist(p=,idx=2)
   probDZ <- probs(mycoef)
@@ -130,8 +144,11 @@ summary.bptwin <- function(object,level=0.05,...) {
   ## }
   ## names(concordance) <- names(conditional) <- c("MZ","DZ")
 
-  hval <- rbind(c(H,hstd^0.5,ci)); colnames(hval) <- c("Estimate","Std.Err",CIlab); rownames(hval) <- "Heritability"
+  hval <- rbind(c(H,hstd^0.5,ci)); colnames(hval) <- c("Estimate","Std.Err",CIlab); 
 
+  hval <- rbind(hval, tigol(c(hp,NA,hp-qnorm(1-alpha)*shp,hp+qnorm(1-alpha)*shp)))
+  rownames(hval) <- c("Heritability","h^2 pr")
+  
   Nstr <- object$N
   nN <- ncol(object$N)
   npos <- seq(nN/2)
