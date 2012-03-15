@@ -14,8 +14,8 @@
 \tabular{ll}{
 Package: \tab lava.tobit \cr
 Type: \tab Package \cr
-Version: \tab 0.4-4 \cr
-Date: \tab 2011-10-10 \cr
+Version: \tab 0.4-5 \cr
+Date: \tab 2012-03-15 \cr
 License: \tab GPL-3 \cr
 LazyLoad: \tab yes \cr
 }
