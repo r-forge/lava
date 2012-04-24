@@ -18,7 +18,6 @@ revdiag <- function(x) {
 }
 ###}}} revdiag
 
-
 ###{{{ ExMarg
 
 ExMarg <- function(Y0,XX0,W0,dS0,midx1=seq(ncol(XX0)/2),midx2=seq(ncol(XX0)/2)+ncol(XX0)/2,eqmarg=TRUE,allmarg=FALSE) {  
@@ -159,3 +158,13 @@ Specials <- function(f,spec,split2="+",...) {
   unlist(strsplit(res,"+",fixed=TRUE))
 }
 ###}}} Specials
+
+###{{{ decomp.specials
+decomp.specials <- function (x, pattern = "[()]", sep = ",", ...) 
+  {
+    st <- gsub(" ", "", x)
+    if (!is.null(pattern)) 
+      st <- rev(unlist(strsplit(st, pattern, ...)))[1]
+    unlist(strsplit(st, sep, ...))
+  }
+###}}} decomp.specials

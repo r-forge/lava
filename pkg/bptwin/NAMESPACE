@@ -4,23 +4,28 @@ import(stats)
 import(lava)
 
 export(
-       plotcr,
-       cif,
-       prepcif,
-       simcif,
-       cumh,
-       ipw,
-       nonparcuminc,
-       splinebasis,
-       CondMom,
-       bptwin,
-       bicomprisk,
-       biprobit,
-       bpnd,
-       npc,
-       fastapprox       
+  plotcr,
+  cif,
+  prepcif,
+  simcif,
+  cumh,
+  ipw,
+  nonparcuminc,
+  splinebasis,
+  CondMom,
+  bptwin,
+  bicomprisk,
+  biprobit,
+  bpnd,
+  npc,
+  fastapprox,
+  ClaytonOakes
 )
 
+S3method(plot, "claytonoakes")
+S3method(summary, "claytonoakes")
+S3method(print, "claytonoakes")
+S3method(print, "summary.claytonoakes")
 S3method(sim, "bptwin")
 S3method(score, "biprobit")
 S3method(logLik, "biprobit")
