@@ -1,7 +1,7 @@
 Package: twinlm
 Type: Package
 Title: Linear models for twin data
-Version: 0.3-1
+Version: 0.3-1 
 Date: 2011-10-19
 Author: Klaus K. Holst
 Maintainer: Klaus K. Holst <kkho@biostat.ku.dk>
