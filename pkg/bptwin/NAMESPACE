@@ -19,7 +19,8 @@ export(
   bpnd,
   npc,
   fastapprox,
-  ClaytonOakes
+  ClaytonOakes,
+  sim.clayton.oakes  
 )
 
 S3method(plot, "claytonoakes")
