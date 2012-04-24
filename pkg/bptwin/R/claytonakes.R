@@ -115,7 +115,7 @@ print.summary.claytonoakes <- function(x,...) {
 summary.claytonoakes <- function(obj,...) {
   mycoef <- matrix(nrow=length(obj$coef),ncol=4)
   mycoef[,1:2] <- cbind(obj$coef,sqrt(diag(obj$vcov)))
-  mycoef[,3:4] <- cbind(mycoef[,1]-qnorm(0.975)*mycoef[,2],mycoef[,2]+qnorm(0.975)*mycoef[,2])
+  mycoef[,3:4] <- cbind(mycoef[,1]-qnorm(0.975)*mycoef[,2],mycoef[,1]+qnorm(0.975)*mycoef[,2])
   colnames(mycoef) <- c("Estimate","Std.Err","2.5%","97.5%")
   if (length(obj$cuts))
   cutnames <- levels(cut(0,breaks=obj$cuts))
