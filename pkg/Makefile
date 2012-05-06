@@ -1,4 +1,5 @@
-PKG := lava lava.tobit lava.mixture twinlm lava.nlin
+PKG := lava lava.tobit lava.mixture twinlm lava.nlin mets
+RCMD := R
 getver := ./getversion.pl
 package :=  $(foreach var,$(PKG),$(shell $(getver) $(var)))
 version :=  $(foreach var,$(PKG),$(shell $(getver) $(var) version))
@@ -28,20 +29,20 @@ all: build install buildwin
 	@ln -f -s $(curpath)/current/* ~/public_html/sem/
 
 build: 
-	R CMD INSTALL --build --library=$(libpath) $(PKG)
+	$(RCMD) CMD INSTALL --build --library=$(libpath) $(PKG)
 
 ##buildwin: 
 %.zip: 
 	cd $(libpath); zip -r $@ $*/* && mv $@ $(curpath)
 
 install: 
-	R CMD INSTALL --no-multiarch $(PKG)
+	$(RCMD) CMD INSTALL --no-multiarch $(PKG)
 
 R:
-	R CMD SHLIB m.cpp
+	$(RCMD) CMD SHLIB m.cpp
 
 check: 
-	R CMD check $(PKG) --no-multiarch --library=$(libpath)
+	$(RCMD) CMD check $(PKG) --no-multiarch --library=$(libpath)
 
 clean:
 	@rm -Rf $(chkpkg)

@@ -1,24 +1,15 @@
+export(acde)
+export(twinlm)
+export(twinsim)
 import(lava)
-import(utils)
 import(stats)
-
-export(
-       twinlm,
-       twinsim,
-       acde      
-       )
-
-
-### twinlm
-S3method(logLik, twinlm)
-S3method(summary, twinlm)
-S3method(print, twinlm)
-S3method(print, summary.twinlm)
-S3method(plot, twinlm)
-S3method(compare, twinlm)
-S3method(vcov, twinlm)
-S3method(acde, twinlm)
-S3method(print, summary.twinlm)
-S3method(model.frame, twinlm)
-
-
+import(utils)
+S3method(acde,twinlm)
+S3method(compare,twinlm)
+S3method(logLik,twinlm)
+S3method(model.frame,twinlm)
+S3method(plot,twinlm)
+S3method(print,summary.twinlm)
+S3method(print,twinlm)
+S3method(summary,twinlm)
+S3method(vcov,twinlm)

@@ -126,7 +126,7 @@ summary.claytonoakes <- function(obj,...) {
   res
 }
 
-plot.claytonoakes <- function(x,chaz=TRUE,add=TRUE,col="darkblue",...) {
+plot.claytonoakes <- function(x,chaz=TRUE,add=!is.null(dev.list()),col="darkblue",...) {
   haz <- summary(x)$coef[-seq(x$nbeta+x$ngamma),,drop=FALSE]
   t <- x$cuts
   L <- approxfun(t,f=1,cumsum(c(0,haz[,1]*diff(t))),method="linear")
