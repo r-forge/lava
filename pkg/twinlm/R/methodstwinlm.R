@@ -13,7 +13,7 @@ print.twinlm <- function(x,...) {
 ##' @S3method summary twinlm
 summary.twinlm <- function(object,...) {
   e <- object$estimate
-  zygtab <- with(object, table(data[,status]))
+  zygtab <- with(object, table(data[,zyg]))
   theta <- pars(e)
   theta.sd <- sqrt(diag(e$vcov))
   myest <- cbind(theta,theta.sd,(Z <- theta/theta.sd),2*(1-pnorm(abs(Z))))
@@ -195,10 +195,9 @@ summary.twinlm <- function(object,...) {
     DZcc <- with(M2, pmvnorm(lower=c(0,0),upper=c(Inf,Inf),mean=xi[myidx,1],sigma=C[myidx,myidx]))
 ##    browser()
   }
-
   
-  
-  res <- list(estimate=myest, zyg=zygtab, varEst=varEst, varSigma=varSigma, hval=hval, heritability=h2val, hci=ci.logit, corMZ=corMZ, corDZ=corDZ,
+  res <- list(estimate=myest, zyg=zygtab, varEst=varEst, varSigma=varSigma, hval=hval, heritability=h2val, hci=ci.logit, corMZ=corMZ, corDZ=corDZ, acde=acde.twinlm(object),
+              logLik=logLik(e), AIC=AIC(e), BIC=BIC(e),
               concMZ=MZcc, concDZ=DZcc)                              
   class(res) <- "summary.twinlm"
   return(res)
@@ -220,14 +219,16 @@ print.summary.twinlm <- function(x,signif.stars=FALSE,...) {
 ##   for (i in 1:4) {
 ##     cat(mynames[i], "=", x$varEst[i], "\n")
 ##   }  
+  cat("\nVariance decomposition:\n")
+  print(x$acde)
   cat("\n")
   ##  cat("hn2 = ", hn2, "\t hb2 = ", hb2, "\n\n")
 ##  cat("Narrow-sense heritability (additive genetic factors):\n")
 ##  print(x$hval)
 ##  cat("\n")  
-  cat("heritability (total genetic factors):\n")
-  h <- with(x, c(heritability,hci));
-  names(h) <- c("Estimate","Std.Err",names(x$hci))
+  cat("Broad-sense heritability (total genetic factors):\n")
+  h <- with(x, c(heritability[1],hci));
+  names(h) <- c("Estimate",names(x$hci))
   h <- na.omit(h)
   print(h)  
   cat("\n")  
@@ -238,14 +239,17 @@ print.summary.twinlm <- function(x,signif.stars=FALSE,...) {
     cat("Concordance MZ:", x$concMZ, "\n")
     cat("Concordance DZ:", x$concDZ, "\n")
     cat("\n")
-  }  
+  }
+  print(x$logLik)
+  cat("AIC:", x$AIC, "\n")
+  cat("BIC:", x$BIC, "\n")
 }
 
 ###}}} print.summary.twinlm
 
 ###{{{ compare.twinlm
 
-##' ##' @S3method compare twinlm
+##' @S3method compare twinlm
 compare.twinlm <- function(object,...) {
   objects <- list(object,...)
   if (length(objects)<2)
@@ -294,15 +298,7 @@ model.frame.twinlm <- function(formula,...) {
 
 ###{{{ acde
 
-##' Extract variance components of twinlm object
-##'
-##' @title Extract variance components of twinlm object
-##' @param x twinlm object
-##' @param ... Additional arguments parsed on to lower-level functions
-##' @author Klaus K. Holst
-##' @export
-"acde" <- function(x,...) UseMethod("acde")
-##' @S3method acde twinlm
+##"acde" <- function(x,...) UseMethod("acde")
 acde.twinlm <- function(x,...) {
   m <- x$estimate$model$lvm[[1]]
   lambdas <- c("lambda[a]","lambda[c]","lambda[d]","lambda[e]")
@@ -312,10 +308,12 @@ acde.twinlm <- function(x,...) {
     pos <- which(lcur%in%l)
     par <- substr(strsplit(l,"[",fixed=TRUE)[[1]][2],1,1)
     f <- as.formula(paste(par,"~",paste(lcur,collapse="+")))
-    myfun <- eval(parse(text=paste("function(x) x[",pos,"]^2/sum(x^2)")))
+    myfun <- eval(parse(text=paste("function(x) qnorm(x[",pos,"]^2/sum(x^2))")))
     constrain(x$estimate,f) <- myfun ##function(x) x[get("pos")]^2/sum(x^2)
   }
-  constraints(x$estimate)
+  M <- pnorm(constraints(x$estimate)[,c(1,5,6),drop=FALSE])
+  rownames(M) <- toupper(rownames(M))
+  M
 }
 
 ###}}} acde

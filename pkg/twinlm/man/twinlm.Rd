@@ -2,10 +2,10 @@
 \alias{twinlm}
 \title{Classic twin model for quantitative traits}
 \usage{
-  twinlm(formula, data, id = "id", type = c("ace"),
-    status = "zyg", DZ, twinnum = "twinnum", weight = NULL,
-    binary = FALSE, probitscale = 1, keep = weight,
-    estimator = "gaussian", ...)
+  twinlm(formula, data, id, zyg, DZ, DZos, weight = NULL,
+    type = c("ace"), twinnum = "twinnum", binary = FALSE,
+    probitscale = 1, keep = weight, estimator = "gaussian",
+    ...)
 }
 \arguments{
   \item{formula}{Formula specifying effects of covariates
@@ -20,25 +20,29 @@
   \item{id}{The name of the column in the dataset
   containing the twin-id variable.}
 
+  \item{zyg}{The name of the column in the dataset
+  containing the zygosity variable.}
+
+  \item{DZ}{Character defining the level in the zyg
+  variable corresponding to the dyzogitic twins. If this
+  argument is missing, the reference level (i.e. the first
+  level) will be interpreted as the dyzogitic twins.}
+
+  \item{DZos}{Optional. Character defining the level in the
+  zyg variable corresponding to the oppposite sex dyzogitic
+  twins.}
+
+  \item{weight}{Weight matrix if needed by the chosen
+  estimator. For use with Inverse Probability Weights}
+
   \item{type}{Character defining the type of analysis to be
   performed. Should be a subset of "aced" (additive genetic
   factors, common environmental factors, unique
   environmental factors, dominant genetic factors).}
 
-  \item{status}{The name of the column in the dataset
-  containing the zygosity variable.}
-
-  \item{DZ}{Character defining the level in the status
-  variable corresponding to the dyzogitic twins. If this
-  argument is missing, the reference level (i.e. the first
-  level) will be interpreted as the dyzogitic twins.}
-
   \item{twinnum}{The name of the column in the dataset
   numbering the twins (1,2). If it does not exist in
   \code{data} it will automatically be created.}
-
-  \item{weight}{Weight matrix if needed by the chosen
-  estimator. For use with Inverse Probability Weights}
 
   \item{binary}{If \code{TRUE} a liability model is fitted}
 
@@ -63,27 +67,27 @@
 \examples{
 ## Simulate data
 set.seed(1)
-d <- twinsim(n=200,k1=c(1,-1),k2=c(),lambda=c(1,1,1))$data
+d <- twinsim(2000,b1=c(1,-1),b2=c(),acde=c(1,1,0,1))
 ## E(y|z1,z2) = z1 - z2. var(A) = var(C) = var(E) = 1
 
 ## E.g to fit the data to an ACE-model without any confounders we simply write
-ace <- twinlm(y ~ 1, d, DZ="DZ")
+ace <- twinlm(y1 ~ 1, data=d, DZ="DZ", zyg="zyg", id="id")
 ace
 ## An AE-model could be fitted as
-ae <- twinlm(y ~ 1, d, type="ae", DZ="DZ")
+ae <- twinlm(y1 ~ 1, data=d, DZ="DZ", zyg="zyg", id="id", type="ae")
 ## LRT:
 compare(ae,ace)
 ## AIC
 AIC(ae)-AIC(ace)
 ## To adjust for the covariates we simply alter the formula statement
-ace2 <- twinlm(y~z1+z2,d,DZ="DZ")
+ace2 <- twinlm(y1 ~ x11+x12, data=d, DZ="DZ", zyg="zyg", id="id", type="ace")
 ## Summary/GOF
 summary(ace2)
 ## An interaction could be analyzed as:
-ace3 <- twinlm(y ~ z1 + z2 + z1:I(z2<0),d, DZ="DZ")
+ace3 <- twinlm(y1 ~ x11+x12 + x11:I(x12<0), data=d, DZ="DZ", zyg="zyg", id="id", type="ace")
 ## Categorical variables are also supported
-d2 <- transform(d,z2cat=cut(z2,3,labels=c("Low","Med","High")))
-ace4 <- twinlm(y ~ z1 + z2cat, d2, DZ="DZ")
+d2 <- transform(d,x12cat=cut(x12,3,labels=c("Low","Med","High")))
+ace4 <- twinlm(y1 ~ x11+x12cat, data=d2, DZ="DZ", zyg="zyg", id="id", type="ace")
 ## plot the model structure
 \donttest{
 plot(ace4)
