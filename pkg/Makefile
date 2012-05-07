@@ -28,6 +28,8 @@ all: build install buildwin
 ####	@cp -f current/$(PKG).zip current/$(PKG)_$(version).zip
 	@ln -f -s $(curpath)/current/* ~/public_html/sem/
 
+srcbuild: $(RCMD) CMD build --library=$(libpath) $(PKG)
+
 build: 
 	$(RCMD) CMD INSTALL --build --library=$(libpath) $(PKG)
 

@@ -66,8 +66,15 @@
 ##' @param estimator Choice of estimator/model.
 ##' @param ... Additional arguments parsed on to lower-level functions
 twinlm <- function(formula, data, id, zyg, DZ, DZos, weight=NULL, type=c("ace"), twinnum="twinnum", binary=FALSE,probitscale=1,keep=weight,estimator="gaussian",...) {
+  ## if (binary) {
+  ##   args <- as.list(match.call(expand=TRUE))
+  ##   args[[1]] <- NULL
+  ##   return(do.call("bptwin",args))
+  ## }
+  
   type <- tolower(type)
   if ("u" %in% type) type <- c("ue")
+  
   
   varnames <- all.vars(formula)
   latentnames <- c("a1","a2","c1","c2","d1","d2","e1","e2")

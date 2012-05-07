@@ -7,6 +7,6 @@ Author: Klaus K. Holst
 Maintainer: Klaus K. Holst <kkho@biostat.ku.dk>
 Description: lava plugin allowing combinations of left and right censored and binary outcomes 
 Keywords: twin model, structural equation model
-Depends: lava, mvtnorm, survival 
+Depends: R (>= 2.8.0), lava (>= 0.9-15), mvtnorm
 License: GPL-3
 LazyLoad: yes
