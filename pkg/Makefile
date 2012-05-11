@@ -34,7 +34,7 @@ build:
 	$(RCMD) CMD INSTALL --build --library=$(libpath) $(PKG)
 
 ##buildwin: 
-%.zip: 
+%.zip:
 	cd $(libpath); zip -r $@ $*/* && mv $@ $(curpath)
 
 install: 
@@ -43,8 +43,14 @@ install:
 R:
 	$(RCMD) CMD SHLIB m.cpp
 
+qcheck: 
+	$(RCMD) CMD check $(PKG) --no-tests --no-install --library=$(libpath)
+
 check: 
 	$(RCMD) CMD check $(PKG) --no-multiarch --library=$(libpath)
+
+fcheck: 
+	$(RCMD) CMD check $(PKG) --as-cran --no-multiarch --library=$(libpath)
 
 clean:
 	@rm -Rf $(chkpkg)
