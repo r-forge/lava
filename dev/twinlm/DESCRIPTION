@@ -1,0 +1,22 @@
+Package: twinlm
+Type: Package
+Title: Linear models for twin data
+Version: 0.4-0
+Date: 2012-05-06
+Author: Klaus K. Holst
+Maintainer: Klaus K. Holst <kkho@biostat.ku.dk>
+Description: Implementation of the classical twin variance component models
+    (ACE/ADE/DCE/DE/AE)
+Keywords: twin model, structural equation model
+Depends:
+    graph,
+    survival,
+    lava (>= 1.0),
+    lava.tobit
+License: GPL-3
+LazyLoad: yes
+Collate:
+    'methodstwinlm.R'
+    'twinlm-package.R'
+    'twinlm.R'
+    'twinsim.R'
