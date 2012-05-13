@@ -1,4 +1,4 @@
-PKG := lava lava.tobit lava.mixture twinlm lava.nlin mets
+PKG := lava lava.tobit lava.mixture lava.nlin mets
 RCMD := R
 getver := ./getversion.pl
 package :=  $(foreach var,$(PKG),$(shell $(getver) $(var)))
