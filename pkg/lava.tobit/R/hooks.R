@@ -1,3 +1,4 @@
+
 lava.tobit.init.hook <- function(x,...) {
   x$attributes$binary <- list()
   return(x)
