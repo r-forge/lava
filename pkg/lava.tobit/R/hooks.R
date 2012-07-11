@@ -1,5 +1,7 @@
 lava.tobit.init.hook <- function(x,...) {
-  nodeDataDefaults(x,"binary") <- FALSE; x
+  x$attributes$binary <- list()
+  return(x)
+  ##  nodeDataDefaults(x,"binary") <- FALSE; x
 }
 
 lava.tobit.sim.hook <- function(x,data,...) {  

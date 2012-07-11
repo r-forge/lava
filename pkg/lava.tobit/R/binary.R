@@ -11,19 +11,22 @@
 `binary.lvm` <-
 function(x,var=NULL, ...) {
   if (is.null(var)) {
-    binidx <- tryCatch(unlist(nodeData(Graph(x), attr="binary")),error=function(e) NULL)
+    ## binidx <- tryCatch(unlist(nodeData(Graph(x), attr="binary")),error=function(e) NULL)
+    binidx <- unlist(x$attributes$binary)
     if (length(binidx)>0)
       return(names(binidx)[binidx])
     else
       return(NULL)
   }
-  if (is.null(nodeDataDefaults(Graph(x))$binary)) {
-    nodeDataDefaults(Graph(x),"binary") <- FALSE
-  } 
+  ##  if (is.null(nodeDataDefaults(Graph(x))$binary)) {
+  ##    nodeDataDefaults(Graph(x),"binary") <- FALSE
+  ##  } 
   
-  x <- addattr(x,attr="shape",var=var,val="box")
-  nodeData(Graph(x), var, attr="binary") <- TRUE
-  nodeData(Graph(x), var, attr="normal") <- FALSE
+  ##  x <- addattr(x,attr="shape",var=var,val="box")
+  x$attributes$binary[var] <- TRUE
+  x$attributes$normal[var] <- FALSE
+  ## nodeData(Graph(x), var, attr="binary") <- TRUE
+  ## nodeData(Graph(x), var, attr="normal") <- FALSE
   covfix(x,var,NULL) <- 1
   ##  distribution(x, var) <- probit.lvm
   return(x)

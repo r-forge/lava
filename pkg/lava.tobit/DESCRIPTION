@@ -1,12 +1,27 @@
 Package: lava.tobit
 Type: Package
 Title: LVM with censored and binary outcomes
-Version: 0.4-6
-Date: 2012-04-24
+Version: 0.4-7
+Date: 2012-07-11
 Author: Klaus K. Holst
 Maintainer: Klaus K. Holst <kkho@biostat.ku.dk>
-Description: lava plugin allowing combinations of left and right censored and binary outcomes 
+Description: lava plugin allowing combinations of left and right censored and
+    binary outcomes
 Keywords: twin model, structural equation model
-Depends: R (>= 2.8.0), lava (>= 0.9-15), mvtnorm, survival
+Depends:
+    R (>= 2.14),
+    lava (>= 1.1),
+    mvtnorm,
+    survival
 License: GPL-3
 LazyLoad: yes
+Collate:
+    'binary.R'
+    'clprobit.R'
+    'hooks.R'
+    'onload.R'
+    'plotres.R'
+    'rbind.Surv.R'
+    'tobit2.R'
+    'tobit.R'
+    'weighted.R'
