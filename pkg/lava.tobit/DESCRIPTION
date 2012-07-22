@@ -7,7 +7,7 @@ Author: Klaus K. Holst
 Maintainer: Klaus K. Holst <kkho@biostat.ku.dk>
 Description: lava plugin allowing combinations of left and right censored and
     binary outcomes
-Keywords: twin model, structural equation model
+Keywords: probit model, tobit model, structural equation model
 Depends:
     R (>= 2.14),
     lava (>= 1.1),
