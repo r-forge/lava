@@ -1,3 +1,44 @@
+##'Plot distribution of standardized residuals
+##'
+##'Plot empirical (KM) and model-specific cumulative distribution function of
+##'standardized residuals
+##'
+##'
+##'@param x Model, \code{lvmfit} object
+##'@param var Character vector of (endogenous) variable names
+##'@param ylab Label of x-axis
+##'@param xlab Label of y-axis
+##'@param main Title of plot
+##'@param \dots Additional argument
+##'@author Klaus K. Holst
+##'@keywords models
+##'@examples
+##'
+##'\dontrun{
+##'
+##'## Simulate data where (y01,y2)
+##'## follows conditional bivariate normal distribution
+##'## given covariate x. Instead of y01 we observe
+##'## right censored version y2
+##'n <- 200
+##'m <- lvm(c(y01,y2) ~ x)
+##'covariance(m) <- y01~y2
+##'set.seed(1)
+##'d <- sim(m,n)
+##'d$cens1 <- rexp(n)
+##'d$status1 <- with(d,y01<cens1)
+##'d$y1 <- with(d, pmin(y01,cens1))
+##'
+##'## Estimate model parameters
+##'d$S1 <- with(d, Surv(y1,status1))
+##'m <- lvm(c(S1,y2)~x); covariance(m) <- S1~y2
+##'e <- estimate(m,d,control=list(trace=1))
+##'
+##'## Plot cumulative distribution functions
+##'par(mfrow=c(2,2)); plotres(e); plot(e)
+##'}
+##'
+##' @export
 plotres <- function(x,var=endogenous(x),
                     ylab="Cumulative Distribution Function",
                     xlab="Standardized residuals",

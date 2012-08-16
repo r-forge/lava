@@ -1,6 +1,9 @@
 ###{{{ Objective function
 
+##' @export
 tobit_method.lvm <- "nlminb1"
+
+##' @export
 tobit_objective.lvm <- function(x,p,data,weight,indiv=FALSE,
                                 algorithm=lava.options()$tobitAlgorithm,
                                 seed=lava.options()$tobitseed,...) {
@@ -84,6 +87,7 @@ tobit_objective.lvm <- function(x,p,data,weight,indiv=FALSE,
 
 ###{{{ Gradient & Hessian
 
+##' @export
 tobit_gradient.lvm <- function(x,p,data,weight,weight2=NULL,indiv=FALSE,
                                algorithm=lava.options()$tobitAlgorithm,
                                seed=lava.options()$tobitseed,...) {
@@ -161,6 +165,7 @@ tobit_gradient.lvm <- function(x,p,data,weight,weight2=NULL,indiv=FALSE,
   return(-colSums(score))
 }
 
+##' @export
 tobit_hessian.lvm <- function(x,p,data,weight,...) {
   S <- -tobit_gradient.lvm(x,p=p,data=data,weight=weight,indiv=TRUE,...)
   J <- t(S)%*%S
@@ -172,6 +177,7 @@ tobit_hessian.lvm <- function(x,p,data,weight,...) {
 
 ###{{{ Log-likelihood
 
+##' @export
 tobit_logLik.lvm <- function(object,p,data,weight,...) {
   res <- -tobit_objective.lvm(x=object,p=p,data=data,weight=weight,...)
   args <- list(...)

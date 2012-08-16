@@ -1,17 +1,17 @@
 \name{rbind.Surv}
 \alias{rbind.Surv}
 \title{Appending \code{Surv} objects}
-\description{
-  \code{rbind} method for \code{Surv} objects
-}
 \usage{
-\method{rbind}{Surv}(...)
+  rbind.Surv(...)
 }
 \arguments{
   \item{...}{\code{Surv} objects}
 }
 \value{
   \code{Surv} object
+}
+\description{
+  \code{rbind} method for \code{Surv} objects
 }
 \examples{
 y <- yl <- yr <- rnorm(10)
@@ -24,5 +24,8 @@ rbind(S1,S1)
 rbind(S2,S2)
 rbind(S3,S3)
 }
-\author{Klaus K. Holst}
+\author{
+  Klaus K. Holst
+}
 \keyword{utilities}
+

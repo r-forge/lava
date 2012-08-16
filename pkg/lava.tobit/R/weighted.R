@@ -1,5 +1,10 @@
+##' @export 
 tobitw_method.lvm <- "estfun"
+
+##' @export 
 tobitw_gradient.lvm <- tobit_gradient.lvm
+
+##' @export 
 tobitw_hessian.lvm <- tobit_hessian.lvm
 
 

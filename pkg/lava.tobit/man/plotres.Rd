@@ -1,22 +1,28 @@
 \name{plotres}
 \alias{plotres}
 \title{Plot distribution of standardized residuals}
-\description{
-  Plot empirical (KM) and model-specific cumulative distribution function  of standardized residuals  
-}
 \usage{
-plotres(x,var=endogenous(x),
-                    ylab="Cumulative Distribution Function",
-                    xlab="Standardized residuals",
-                    main,
-                    ...)}
+  plotres(x, var = endogenous(x),
+    ylab = "Cumulative Distribution Function",
+    xlab = "Standardized residuals", main, ...)
+}
 \arguments{
   \item{x}{Model, \code{lvmfit} object}
-  \item{var}{Character vector of (endogenous) variable names}
+
+  \item{var}{Character vector of (endogenous) variable
+  names}
+
   \item{ylab}{Label of x-axis}
+
   \item{xlab}{Label of y-axis}
+
   \item{main}{Title of plot}
+
   \item{\dots}{Additional argument}
+}
+\description{
+  Plot empirical (KM) and model-specific cumulative
+  distribution function of standardized residuals
 }
 \examples{
 \dontrun{
@@ -43,6 +49,8 @@ e <- estimate(m,d,control=list(trace=1))
 par(mfrow=c(2,2)); plotres(e); plot(e)
 }
 }
-\author{Klaus K. Holst}
+\author{
+  Klaus K. Holst
+}
 \keyword{models}
 

@@ -1,3 +1,26 @@
+##'Composite Likelihood for probit latent variable models
+##'
+##'Estimate parameters in a probit latent variable model via a composite
+##'likelihood decomposition.
+##'
+##'
+##'@param x \code{lvm}-object
+##'@param data data.frame
+##'@param k Size of composite groups
+##'@param type Determines number of groups. With \code{type="nearest"} (default)
+##'only neighboring items will be grouped, e.g. for \code{k=2}
+##'(y1,y2),(y2,y3),... With \code{type="all"} all combinations of size \code{k}
+##'are included
+##'@param pairlist A list of indices specifying the composite groups. Optional
+##'argument which overrides \code{k} and \code{type} but gives complete
+##'flexibility in the specification of the composite likelihood
+##'@param silent Turn output messsages on/off
+##'@param \dots Additional arguments parsed on to lower-level functions
+##'@return An object of class \code{clprobit} inheriting methods from \code{lvm}
+##'@author Klaus K. Holst
+##'@seealso \link[lava]{estimate}
+##'@keywords models regression
+##' @export
 clprobit <- function(x,data,k=2,type=c("nearest","all"),pairlist,silent=TRUE,
                      ...) {
   y <- endogenous(x)

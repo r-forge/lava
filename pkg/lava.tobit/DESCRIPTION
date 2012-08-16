@@ -22,6 +22,6 @@ Collate:
     'onload.R'
     'plotres.R'
     'rbind.Surv.R'
-    'tobit2.R'
     'tobit.R'
     'weighted.R'
+    'lava.tobit-package.R'

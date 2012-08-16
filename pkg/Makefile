@@ -1,8 +1,13 @@
 PKG := lava lava.tobit lava.mixture lava.nlin mets
-RCMD := R
+R := R
+RCMD := $(R) CMD
+RSCRIPT := Rscript
+SVNCMD := svn
 getver := ./getversion.pl
 package :=  $(foreach var,$(PKG),$(shell $(getver) $(var)))
 version :=  $(foreach var,$(PKG),$(shell $(getver) $(var) version))
+cranpkg := $(foreach var,$(PKG), CRAN/$(var))
+
 winpkg :=  $(foreach var,$(PKG),$(var).zip)
 chkpkg :=  $(foreach var,$(PKG),$(var).Rcheck)
 ##$(shell perl getversion.pl $(PKG))
@@ -28,29 +33,40 @@ all: build install buildwin
 ####	@cp -f current/$(PKG).zip current/$(PKG)_$(version).zip
 	@ln -f -s $(curpath)/current/* ~/public_html/sem/
 
-srcbuild: $(RCMD) CMD build --library=$(libpath) $(PKG)
+export:
+	rm -Rf $(cranpkg)
+	$(SVNCMD) export $(PKG) $(cranpkg)
+	cd CRAN; $(RCMD) build $(PKG)
+
+exportcheck: export 
+	cd CRAN; $(MAKE) fcheck $(PKG)
+
+srcbuild: $(RCMD) build --library=$(libpath) $(PKG)
 
 build: 
-	$(RCMD) CMD INSTALL --build --library=$(libpath) $(PKG)
+	$(RCMD) INSTALL --build --library=$(libpath) $(PKG)
+
+roxygen: 
+	echo 'library(roxygen2); roxygenize("$(PKG)")' | $(R) --library=$(libpath) --no-save 
 
 ##buildwin: 
 %.zip:
 	cd $(libpath); zip -r $@ $*/* && mv $@ $(curpath)
 
 install: 
-	$(RCMD) CMD INSTALL --no-multiarch $(PKG)
+	$(RCMD) INSTALL --no-multiarch $(PKG)
 
 R:
-	$(RCMD) CMD SHLIB m.cpp
+	$(RCMD) SHLIB m.cpp
 
 qcheck: 
-	$(RCMD) CMD check $(PKG) --no-tests --no-install --library=$(libpath)
+	$(RCMD) check $(PKG) --no-tests --no-install --library=$(libpath)
 
 check: 
-	$(RCMD) CMD check $(PKG) --no-multiarch --library=$(libpath)
+	$(RCMD) check $(PKG) --no-multiarch --library=$(libpath)
 
 fcheck: 
-	$(RCMD) CMD check $(PKG) --as-cran --no-multiarch --library=$(libpath)
+	$(RCMD) check $(PKG) --as-cran --no-multiarch --library=$(libpath)
 
 clean:
 	@rm -Rf $(chkpkg)
