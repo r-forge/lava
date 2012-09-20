@@ -12,6 +12,7 @@ tobit_objective.lvm <- function(x,p,data,weight,indiv=FALSE,
     save.seed <- .Random.seed
     set.seed(seed)
   }
+  
   require("mvtnorm")
   zz <- manifest(x) 
   d <- as.matrix(rbind(data)[,zz,drop=FALSE]);
@@ -29,7 +30,6 @@ tobit_objective.lvm <- function(x,p,data,weight,indiv=FALSE,
   Sigma <- mp$C ## Model specific covariance matrix
   xi <- mp$xi ## Model specific mean-vector
   val <- c()
-##  browser()
   for (i in 1:nrow(patterns)) {    
     ## Usual marginal likelihood for status==1
     pat <- patterns[i,]
@@ -45,7 +45,6 @@ tobit_objective.lvm <- function(x,p,data,weight,indiv=FALSE,
     right.cens.y <- zz[right.cens.idx] ##setdiff(zz,noncens.y)
     y <- d[idx,,drop=FALSE]
     val1 <- val0 <- 0;
-    ## browser()
     if (length(noncens.y)>0) {
       ## p(y), using: int[p(y,y*)]dy* =  p(y) int[p(y*|y)]dy*
       val1 <- dmvnorm(d[idx,noncens.y,drop=FALSE], 
@@ -59,11 +58,15 @@ tobit_objective.lvm <- function(x,p,data,weight,indiv=FALSE,
       L[cbind(cens.which.left,cens.which.left)] <- (-1)
       ##  L[cens.which.left,cens.which.left] <- (-1)
       if (length(noncens.y)==0) {
+        ##        suppressMessages(browser())
+        low <- L%*%t(d[idx,cens.idx,drop=FALSE])-as.numeric(L%*%xi)
         val0 <- sapply(idx,
                             function(ii)
-                            log(pmvnorm(lower=as.numeric(L%*%d[ii,cens.idx]),
+                            log(pmvnorm(lower=,
                                                      mean=as.numeric(L%*%xi),
-                                        sigma=L%*%Sigma%*%L,algorithm=algorithm)))
+                                        sigma=L%*%Sigma%*%L,algorithm=algorithm))
+                       )
+
       } else {
          M <- mom.cens(x,p,data=y,cens.idx,conditional=TRUE,deriv=FALSE)
          val0 <- c()
@@ -71,13 +74,12 @@ tobit_objective.lvm <- function(x,p,data,weight,indiv=FALSE,
            val0 <- c(val0,log(pmvnorm(lower=as.numeric(L%*%y[j,cens.idx]),mean=as.numeric(L%*%M$mu.censIobs[j,]),sigma=L%*%M$S.censIobs%*%L,algorithm=algorithm)) )
          }        
         }
-    }    
+    }
     val <- c(val,-val1-val0)
   }
   if (!is.null(seed))
     .Random.seed <<- save.seed
 
-  
   if (!indiv)
     return(sum(val))
   val
@@ -141,7 +143,6 @@ tobit_gradient.lvm <- function(x,p,data,weight,weight2=NULL,indiv=FALSE,
     w <- W0[idx,,drop=FALSE]
     dummy <- cens.score(x,p,data=y,cens.idx=cens.idx,cens.which.left=cens.which.left, algorithm=algorithm,weight=w)
     score[idx,] <- dummy   
-    ##    browser()
     ##    y.pat <- unique(y,MARGIN=1)
     ##    system.time(
     ##    y.type <- apply(y,1,
@@ -153,7 +154,6 @@ tobit_gradient.lvm <- function(x,p,data,weight,weight2=NULL,indiv=FALSE,
     ##                      ))
     ##    score <- rbind(score,dummy[y.type,,drop=FALSE]) 
     ##    score <- rbind(0)
-    ##    browser()
     ##    dummy <- cens.score(x,p,data=y,cens.idx=cens.idx, cens.which.left=cens.which.left)
     ##    score <- rbind(score,dummy)
   }
@@ -198,12 +198,10 @@ cens.score <- function(x,p,data,cens.idx,cens.which.left,weight,...) {
   M <- mom.cens(x,p,data=data,cens.idx=cens.idx,conditional=TRUE,deriv=TRUE)
 ##))
   ## Censored part:
-##  browser()
   if (length(cens.idx)>0) {
 
     combcens <- 1*(length(cens.which.left)>0) +
       -1*(length(cens.which.left)<length(cens.idx))
-##    browser()
     ## 0: left and right, -1: left only, 1: right only
  
 ##     mu <- M$mu.cens
@@ -279,7 +277,6 @@ cens.score <- function(x,p,data,cens.idx,cens.which.left,weight,...) {
     for (i in 1:n) {
       z <- as.numeric(y1[i,])
       u <- z-mu
-##      browser()
       if (!is.null(weight)) {
         W <- diag(weight[i,obs.idx],nrow=length(obs.idx))
         S1 <- rbind(S1,
@@ -309,7 +306,6 @@ cens.score <- function(x,p,data,cens.idx,cens.which.left,weight,...) {
 Dpmvnorm <- function(Y,S,mu=rep(0,NROW(S)),std=FALSE,seed=lava.options()$tobitseed,
                      algorithm=lava.options()$tobitAlgorithm,
                      ...) {
-##  browser()
   k <- NROW(S)
   if (!is.null(seed) & k>1) {
     if (!exists(".Random.seed")) runif(1)
@@ -439,7 +435,6 @@ Dthetapmvnorm <- function(yy,mu,S,dmu,dS,seed=lava.options()$tobitseed,
 
 mom.cens <- function(x,p,cens.idx,data,deriv=TRUE,conditional=TRUE,right=TRUE,...) {
   obs.idx <- setdiff(1:NCOL(data),cens.idx)
-##  browser()
   M <- moments(x,p,data=as.data.frame(data))
   if (deriv)
     D <- deriv(x,p=p,mom=M,meanpar=TRUE) ##,mu=colMeans(data))
