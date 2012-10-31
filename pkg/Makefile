@@ -73,6 +73,12 @@ check:
 fcheck: 
 	$(RCMD) check $(PKG) --as-cran --no-multiarch --library=$(libpath)
 
+srcclean: 
+	@rm -Rf $(PKG)/src-i386
+	@rm -Rf $(PKG)/src-x86_64
+	@rm -f $(PKG)/src/*.o
+	@rm -f $(PKG)/src/*.so
+
 clean:
 	@rm -Rf $(chkpkg)
 	@rm -f *~ *.vrb *.ilg *idx *.lof *.brf *.ind  weaver_debug* _region_* *.pdfsync *.aux *.bbl *.out *.nav *.snm *.toc *aux *.bak *.blg *dvi *.log *tmp
