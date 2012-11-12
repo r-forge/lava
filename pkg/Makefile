@@ -68,10 +68,26 @@ qcheck:
 	$(RCMD) check $(PKG) --no-tests --no-install --library=$(libpath)
 
 check: 
-	$(RCMD) check $(PKG) --no-multiarch --library=$(libpath)
+	$(RCMD) check $(PKG) --timings --no-multiarch --library=$(libpath)
 
 fcheck: 
-	$(RCMD) check $(PKG) --as-cran --no-multiarch --library=$(libpath)
+	$(RCMD) check $(PKG) --timings --as-cran --no-multiarch --library=$(libpath)
+
+cranprep: 
+	rm -Rf ~/temp/cran/$(PKG)
+	mkdir -p ~/temp/cran
+	svn export $(PKG) ~/temp/cran/$(PKG)
+	cd ~/temp/cran; R CMD build $(PKG)
+	cd ~/temp/cran; R CMD check $(package) --as-cran --library=$(libpath)
+	@echo "Upload to:      anonymous@cran.r-project.org"
+	@echo "Prepare email:"
+	@echo "   To: CRAN@R-project.org"
+	@echo "   Subject: CRAN submission $(package))"
+	@echo "   Dear CRAN administrators,"
+	@echo ""
+	@echo "   An updated version of the package $(PKG) has been uploaded to the incoming directory."
+	@echo "   Thanks for putting my package on CRAN."
+	@echo "   Sincerely,"
 
 srcclean: 
 	@rm -Rf $(PKG)/src-i386
