@@ -157,7 +157,7 @@ tobit_gradient.lvm <- function(x,p,data,weight,weight2=NULL,indiv=FALSE,
     ##    dummy <- cens.score(x,p,data=y,cens.idx=cens.idx, cens.which.left=cens.which.left)
     ##    score <- rbind(score,dummy)
   }
-  
+
   if (!is.null(seed))
     .Random.seed <<- save.seed
   if (indiv)

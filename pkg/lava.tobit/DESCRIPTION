@@ -11,6 +11,7 @@ Keywords: probit model, tobit model, structural equation model
 Depends:
     R (>= 2.14),
     lava (>= 1.1),
+    mets,
     mvtnorm,
     survival
 License: GPL-3

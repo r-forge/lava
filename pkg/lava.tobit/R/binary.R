@@ -53,6 +53,7 @@ function(x,var=NULL, ...) {
   
   ##  x <- addattr(x,attr="shape",var=var,val="box")
   x$attributes$binary[var] <- TRUE
+  x$attributes$type[var] <- "Binary"
   x$attributes$normal[var] <- FALSE
   ## nodeData(Graph(x), var, attr="binary") <- TRUE
   ## nodeData(Graph(x), var, attr="normal") <- FALSE

@@ -21,6 +21,7 @@ lava.tobit.color.hook <- function(x,subset=vars(x),...) {
 lava.tobit.estimate.hook <- function(x,data,weight,weight2,estimator,...) {
   dots <- list(...)
 ## Binary outcomes -> censored regression
+  bin <- intersect(binary(x),vars(x))
   if (is.null(dim(data))) return(NULL)
   if (estimator%in%c("gaussian","tobit")) {
     for (i in setdiff(endogenous(x),binary(x))) {
@@ -32,10 +33,10 @@ lava.tobit.estimate.hook <- function(x,data,weight,weight2,estimator,...) {
         }
       }
     }
-    if (length(binary(x))>0) {
+    if (length(bin)>0) {
       estimator <- "tobit"
       if (is.null(weight)) {        
-        W <- data[,binary(x),drop=FALSE]; W[W==0] <- -1; colnames(W) <- binary(x)
+        W <- data[,bin,drop=FALSE]; W[W==0] <- -1; colnames(W) <- bin
         weight <- lava.options()$threshold*W
       } else {
         ##        if (!all(binary(x)%in%colnames(data)))
@@ -44,7 +45,7 @@ lava.tobit.estimate.hook <- function(x,data,weight,weight2,estimator,...) {
         ##        weight <- W
         ##          weight[,binary(x)] <- W
       }
-      for (b in binary(x)) {
+      for (b in bin) {
         data[!is.na(data[,b]),b] <- 0
       }
       ##    data[,binary(x)] <- 0
@@ -59,7 +60,7 @@ lava.tobit.estimate.hook <- function(x,data,weight,weight2,estimator,...) {
 ## Transform 'Surv' objects
   W <- mynames <- c()
   if (estimator%in%c("gaussian","tobit","tobitw")) {
-    for (i in setdiff(endogenous(x),binary(x))) {
+    for (i in setdiff(endogenous(x),bin)) {
       if (is.Surv(data[,i])) { 
         estimator <- "tobit"
         S <- data[,i]
