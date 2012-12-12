@@ -18,7 +18,7 @@ lava.tobit.color.hook <- function(x,subset=vars(x),...) {
 }
 
 ##' @export
-lava.tobit.estimate.hook <- function(x,data,weight,weight2,estimator,...) {
+lava.tobit.estimate.hook <- function(x,data,weight,data2,estimator,...) {
   dots <- list(...)
 ## Binary outcomes -> censored regression
   bin <- intersect(binary(x),vars(x))
@@ -41,7 +41,7 @@ lava.tobit.estimate.hook <- function(x,data,weight,weight2,estimator,...) {
       } else {
         ##        if (!all(binary(x)%in%colnames(data)))
         ##        W <- data[,binary(x),drop=FALSE]; W[W==0] <- -1; colnames(W) <- binary(x)
-        ##        attributes(W)$weight2 <- weight
+        ##        attributes(W)$data2 <- weight
         ##        weight <- W
         ##          weight[,binary(x)] <- W
       }
@@ -49,16 +49,39 @@ lava.tobit.estimate.hook <- function(x,data,weight,weight2,estimator,...) {
         data[!is.na(data[,b]),b] <- 0
       }
       ##    data[,binary(x)] <- 0
-      if (!is.null(weight2)) {
+      if (!is.null(data2)) {
         estimator <- "tobitw"
       }
     }
   }
-##  if (!is.null(weight))
-##  weight <- as.matrix(weight)
+  
+  ## Transform 'Surv' objects
+  data2 <- mynames <- NULL
+  if (estimator%in%c("normal")) {
+    for (i in setdiff(endogenous(x),bin)) {
+      if (is.Surv(data[,i])) { 
+        S <- data[,i]
+        y1 <- S[,1]
+        if (attributes(S)$type=="left")  {
+          y2 <- y1
+          y1[S[,2]==0] <- -Inf          
+        }
+        if (attributes(S)$type=="right") {
+          y2 <- y1
+          y2[S[,2]==0] <- Inf
+        }
+        if (attributes(S)$type=="interval2") {
+          y2 <- S[,2]
+        }
+        if (!(attributes(S)$type%in%c("left","right","interval2"))) stop("Surv type not supported.")
+        mynames <- c(mynames,i)
+        data2 <- cbind(data2,y2)
+        data[,i] <- y1
+      }
+    }
+  }
 
-## Transform 'Surv' objects
-  W <- mynames <- c()
+  W <- NULL
   if (estimator%in%c("gaussian","tobit","tobitw")) {
     for (i in setdiff(endogenous(x),bin)) {
       if (is.Surv(data[,i])) { 
@@ -91,5 +114,5 @@ lava.tobit.estimate.hook <- function(x,data,weight,weight2,estimator,...) {
       }
     }
   }
-  return(c(list(x=x,data=data,weight=weight,estimator=estimator),dots)) 
+  return(c(list(x=x,data=data,weight=weight,data2=data2,estimator=estimator),dots)) 
 }
