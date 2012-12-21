@@ -26,3 +26,5 @@ Collate:
     'tobit.R'
     'weighted.R'
     'lava.tobit-package.R'
+    'normal.R'
+    'ordinal.R'
