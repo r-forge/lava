@@ -1,4 +1,4 @@
-pkg := lava lava.tobit lava.mixture lava.nlin mets
+PKG := lava lava.tobit lava.mixture lava.nlin mets
 R := R
 RCMD := $(R) CMD
 RSCRIPT := Rscript
@@ -7,17 +7,26 @@ getver := ./getversion.pl
 package :=  $(foreach var,$(pkg),$(shell $(getver) $(var)))
 version :=  $(foreach var,$(pkg),$(shell $(getver) $(var) version))
 cranpkg := $(foreach var,$(pkg), CRAN/$(var))
+ifeq ($(wildcard ~/tmp),) 
+    tempdir = /tmp
+else 
+    tempdir = ~/tmp
+endif
 
-winpkg :=  $(foreach var,$(pkg),$(var).zip)
-chkpkg :=  $(foreach var,$(pkg),$(var).Rcheck)
-##$(shell perl getversion.pl $(pkg))
-##version := $(shell perl getversion.pl $(pkg) version)
+
+winpkg :=  $(foreach var,$(PKG),$(var).zip)
+chkpkg :=  $(foreach var,$(PKG),$(var).Rcheck)
+##$(shell perl getversion.pl $(PKG))
+##version := $(shell perl getversion.pl $(PKG) version)
 libpath := $(shell echo "cat(.libPaths()[1],\"\n\",sep=\"\")" | R --no-save --slave | tail -n 1)
 curpath := $(shell pwd)
 
 default: install
 
 win: $(winpkg)
+
+tmp:
+	echo $(tempdir)
 
 index:
 	@echo "Package: $(pkg)" > current/PACKAGES
@@ -58,6 +67,7 @@ roxygen:
 %.zip:
 	cd $(libpath); zip -r $@ $*/* && mv $@ $(curpath)
 
+install: in
 in: 
 	$(RCMD) INSTALL --no-multiarch $(pkg)
 
@@ -74,11 +84,11 @@ fcheck:
 	$(RCMD) check $(pkg) --timings --as-cran --no-multiarch --library=$(libpath)
 
 cranprep: 
-	rm -Rf ~/temp/cran/$(pkg)
-	mkdir -p ~/temp/cran
-	svn export $(pkg) ~/temp/cran/$(pkg)
-	cd ~/temp/cran; R CMD build $(pkg)
-	cd ~/temp/cran; R CMD check $(package) --as-cran --library=$(libpath)
+	rm -Rf $(tempdir)/cran/$(pkg)
+	mkdir -p $(tempdir)/cran
+	svn export $(pkg) $(tempdir)/cran/$(pkg)
+	cd $(tempdir)/cran; R CMD build $(pkg)
+	cd $(tempdir)/cran; R CMD check $(package) --as-cran --library=$(libpath)
 	@echo "Upload to:      anonymous@cran.r-project.org"
 	@echo "Prepare email:"
 	@echo "   To: CRAN@R-project.org"
