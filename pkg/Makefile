@@ -1,4 +1,4 @@
-PKG := lava lava.tobit lava.mixture lava.nlin mets
+pkg := lava lava.tobit lava.mixture lava.nlin mets
 R := R
 RCMD := $(R) CMD
 RSCRIPT := Rscript
@@ -14,10 +14,10 @@ else
 endif
 
 
-winpkg :=  $(foreach var,$(PKG),$(var).zip)
-chkpkg :=  $(foreach var,$(PKG),$(var).Rcheck)
-##$(shell perl getversion.pl $(PKG))
-##version := $(shell perl getversion.pl $(PKG) version)
+winpkg :=  $(foreach var,$(pkg),$(var).zip)
+chkpkg :=  $(foreach var,$(pkg),$(var).Rcheck)
+##$(shell perl getversion.pl $(pkg))
+##version := $(shell perl getversion.pl $(pkg) version)
 libpath := $(shell echo "cat(.libPaths()[1],\"\n\",sep=\"\")" | R --no-save --slave | tail -n 1)
 curpath := $(shell pwd)
 
