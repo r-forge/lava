@@ -99,7 +99,7 @@ cranprep:
 	@echo "   Thanks for putting my package on CRAN."
 	@echo "   Sincerely,"
 
-srcclean: 
+cclean: 
 	@rm -Rf $(pkg)/src-i386
 	@rm -Rf $(pkg)/src-x86_64
 	@rm -f $(pkg)/src/*.o
