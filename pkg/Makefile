@@ -1,4 +1,5 @@
-pkg := lava lava.tobit lava.mixture lava.nlin mets
+##pkg := lava lava.tobit lava.mixture lava.nlin mets
+pkg := mets
 R := R
 RCMD := $(R) CMD
 RSCRIPT := Rscript
