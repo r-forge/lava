@@ -101,7 +101,7 @@ cranprep:
 	@echo "   Sincerely,"
 
 srcclean: cclean
-cclean: 
+cc: 
 	@rm -Rf $(pkg)/src-i386
 	@rm -Rf $(pkg)/src-x86_64
 	@rm -f $(pkg)/src/*.o
