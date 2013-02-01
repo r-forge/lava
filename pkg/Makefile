@@ -61,7 +61,7 @@ wincheck:
 build: 
 	$(RCMD) INSTALL --build --library=$(libpath) $(pkg)
 
-roxygen: 
+roxy: 
 	echo 'library(roxygen2); roxygenize("$(pkg)")' | $(R) --library=$(libpath) --no-save 
 
 ##buildwin: 
