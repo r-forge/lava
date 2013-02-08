@@ -73,6 +73,8 @@ install: in
 in: 
 	$(RCMD) INSTALL --no-multiarch $(pkg)
 
+rin: roxy in 
+
 R:
 	$(RCMD) SHLIB m.cpp
 
