@@ -69,9 +69,10 @@ roxy:
 %.zip:
 	cd $(libpath); zip -r $@ $*/* && mv $@ $(curpath)
 
+
 install: in
 in: 
-	$(RCMD) INSTALL --no-multiarch $(pkg)
+	$(RCMD) INSTALL --no-multiarch --no-data --no-demo --no-help  --configure-args="CXXFLAGS=-O0" $(pkg)
 
 rin: roxy in 
 

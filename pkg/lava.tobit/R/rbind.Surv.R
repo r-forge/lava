@@ -35,3 +35,4 @@ rbind.Surv <- function(...)
   x <- c(x,list(type=type))
   do.call("Surv",x)
 } 
+

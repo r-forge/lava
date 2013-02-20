@@ -312,6 +312,7 @@ Dpmvnorm <- function(Y,S,mu=rep(0,NROW(S)),std=FALSE,seed=lava.options()$tobitse
     save.seed <- .Random.seed
   }
   require("mvtnorm")
+
   if (!std) {
     L <- diag(S)^0.5
     Li <- diag(1/L,NROW(S))
@@ -338,6 +339,8 @@ Dpmvnorm <- function(Y,S,mu=rep(0,NROW(S)),std=FALSE,seed=lava.options()$tobitse
 #    set.seed(seed)
     D[j] <- dnorm(Y[j])*pmvnorm(upper=as.vector(muj),sigma=Sj,algorithm=algorithm)
   }
+
+  
   H <- matrix(0,k,k) 
   if (k<3) {
     H[1,2] <- H[2,1] <- dmvnorm(unlist(Y),sigma=S)
