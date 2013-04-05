@@ -107,7 +107,7 @@ cranprep:
 	@echo "   Thanks for putting my package on CRAN."
 	@echo "   Sincerely,"
 
-srcclean: cclean
+srcclean: cc
 cc: 
 	@rm -Rf $(pkg)/src-i386
 	@rm -Rf $(pkg)/src-x86_64
