@@ -1,0 +1,95 @@
+*.o
+*.so
+# /dev/bptwin/
+/dev/bptwin/src-*
+
+# /pkg/
+/pkg/*.Rcheck
+/pkg/*.tar.gz
+/pkg/*.zip
+/pkg/.RData
+/pkg/*.tgz
+/pkg/*.obsolete
+/pkg/.Rhistory
+/pkg/x.log
+/pkg/nohup.out
+/pkg/tmp
+
+# /pkg/lava/
+/pkg/lava/POSSIBLESIDEFFECTS*
+
+# /pkg/lava/R/
+/pkg/lava/R/*.dev
+/pkg/lava/R/*.NEW
+/pkg/lava/R/*.BACKUP
+/pkg/lava/R/*.ORIG
+/pkg/lava/R/*.R.*
+/pkg/lava/R/*.diff
+
+# /pkg/lava.nlin/
+/pkg/lava.nlin/src-*
+
+# /pkg/lava.nlin/src/
+/pkg/lava.nlin/src/Makevars.*.*
+
+# /pkg/lava.tobit/R/
+/pkg/lava.tobit/R/*bak
+
+# /pkg/mets/
+/pkg/mets/r_env_cache
+/pkg/mets/Rplots.p*
+/pkg/mets/weaver_debug*
+/pkg/mets/src-*
+/pkg/mets/obsolete
+/pkg/mets/*.tmp
+/pkg/mets/*.bbl
+/pkg/mets/*.blg
+/pkg/mets/*.bak
+/pkg/mets/*.snm
+/pkg/mets/*.aux
+/pkg/mets/*.log
+/pkg/mets/*~
+/pkg/mets/*.out
+/pkg/mets/*.swp
+/pkg/mets/*.nav
+/pkg/mets/*.toc
+/pkg/mets/*.vrb
+/pkg/mets/*.dvi
+/pkg/mets/.Rhistory
+/pkg/mets/.RData
+/pkg/mets/_region*
+
+# /pkg/mets/R/
+/pkg/mets/R/r_env_cache
+/pkg/mets/R/Rplots.p*
+/pkg/mets/R/weaver_debug*
+/pkg/mets/R/*.tmp
+/pkg/mets/R/*.bbl
+/pkg/mets/R/*.blg
+/pkg/mets/R/*.bak
+/pkg/mets/R/*.snm
+/pkg/mets/R/*.aux
+/pkg/mets/R/*.log
+/pkg/mets/R/*~
+/pkg/mets/R/*.out
+/pkg/mets/R/*.swp
+/pkg/mets/R/*.nav
+/pkg/mets/R/*.toc
+/pkg/mets/R/*.vrb
+/pkg/mets/R/*.dvi
+/pkg/mets/R/.Rhistory
+/pkg/mets/R/.RData
+/pkg/mets/R/_region*
+
+# /pkg/mets/inst/misc/
+/pkg/mets/inst/misc/*.png
+/pkg/mets/inst/misc/*.zip
+/pkg/mets/inst/misc/*.rda
+/pkg/mets/inst/misc/*.html
+/pkg/mets/inst/misc/tmp
+
+# /pkg/mets/inst/tests/
+/pkg/mets/inst/tests/*.png
+
+# /pkg/mets/src/
+/pkg/mets/src/symbols.rds
