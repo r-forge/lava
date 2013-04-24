@@ -46,8 +46,7 @@ all: build install buildwin
 
 export:
 	@rm -Rf $(cranpkg)
-	@mkdir -p $(cranpkg)
-	$(GITCMD) archive master | (cd $(cranpkg); tar x)
+	$(GITCMD) archive master $(pkg)/ | (cd CRAN; tar x)
 	cd CRAN; $(RCMD) build $(pkg)
 
 exportcheck: export 
