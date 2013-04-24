@@ -46,7 +46,7 @@ all: build install buildwin
 
 export:
 	@rm -Rf $(cranpkg)
-	$(GITCMD) archive master $(pkg)/ | (cd CRAN; tar x)
+	$(GITCMD) archive HEAD $(pkg)/ | (cd CRAN; tar x)
 	cd CRAN; $(RCMD) build $(pkg)
 
 exportcheck: export 
@@ -92,12 +92,9 @@ check:
 fcheck: 
 	$(RCMD) check $(pkg) --timings --as-cran --no-multiarch --library=$(libpath)
 
-cranprep: 
-	rm -Rf $(tempdir)/cran/$(pkg)
-	mkdir -p $(tempdir)/cran
-	svn export $(pkg) $(tempdir)/cran/$(pkg)
-	cd $(tempdir)/cran; R CMD build $(pkg)
-	cd $(tempdir)/cran; R CMD check $(package) --as-cran --library=$(libpath)
+cranprep: export
+	@cd CRAN; R CMD build $(pkg)
+	@cd CRAN; R CMD check $(package) --as-cran --library=$(libpath)
 	@echo "Upload to:      anonymous@cran.r-project.org"
 	@echo "Prepare email:"
 	@echo "   To: CRAN@R-project.org"
