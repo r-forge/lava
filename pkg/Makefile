@@ -4,7 +4,7 @@ pkgs := lava lava.tobit lava.mixture lava.nlin mets
 R := R
 RCMD := $(R) CMD
 RSCRIPT := Rscript
-SVNCMD := svn
+GITCMD := git
 getver := ./getversion.pl
 package :=  $(foreach var,$(pkg),$(shell $(getver) $(var)))
 version :=  $(foreach var,$(pkg),$(shell $(getver) $(var) version))
@@ -45,8 +45,9 @@ all: build install buildwin
 	@ln -f -s $(curpath)/current/* ~/public_html/sem/
 
 export:
-	rm -Rf $(cranpkg)
-	$(SVNCMD) export $(pkg) $(cranpkg)
+	@rm -Rf $(cranpkg)
+	@mkdir -p $(cranpkg)
+	$(GITCMD) archive master | (cd $(cranpkg); tar x)
 	cd CRAN; $(RCMD) build $(pkg)
 
 exportcheck: export 
