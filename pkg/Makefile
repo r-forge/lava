@@ -71,6 +71,9 @@ roxy:
 	cd $(libpath); zip -r $@ $*/* && mv $@ $(curpath)
 
 
+debug: cc
+	$(RCMD) INSTALL --no-multiarch --dsym $(pkg)
+
 q:
 	$(RCMD) INSTALL --no-multiarch --no-data --no-demo --no-help  --configure-args="CXXFLAGS=-O0" $(pkg)
 
@@ -116,4 +119,4 @@ clean:
 	@rm -Rf $(chkpkg)
 	@rm -f *~ *.vrb *.ilg *idx *.lof *.brf *.ind  weaver_debug* _region_* *.pdfsync *.aux *.bbl *.out *.nav *.snm *.toc *aux *.bak *.blg *dvi *.log *tmp
 
-.PHONY: build check R index clean
+.PHONY: build check R index clean debug
