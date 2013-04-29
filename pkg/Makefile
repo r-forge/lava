@@ -72,7 +72,7 @@ roxy:
 
 
 debug: cc
-	$(RCMD) INSTALL --no-multiarch --dsym --dsymutil $(pkg)
+	$(RCMD) INSTALL --no-multiarch --dsym --dsymutil $(pkg) --configure-args="CXXFLAGS=-O0 -g"
 
 valgrind:
 	R --library=$(libpath) -d "valgrind -v --tool=memcheck --leak-check=full" --vanilla < $(infile) > valgrind.out 2>&1
@@ -102,7 +102,7 @@ fcheck:
 	$(RCMD) check $(pkg) --timings --as-cran --no-multiarch --library=$(libpath)
 
 fullcheck: 
-	$(RCMD) check $(pkg) --use-valgrind --timings --as-cran --no-multiarch --library=$(libpath)
+	$(RCMD) check $(pkg) --use-valgrind --timings --as-cran --no-multiarch --configure-args="CXXFLAGS=-O0 -g" --library=$(libpath)
 
 cranprep: export
 	@cd CRAN; R CMD build $(pkg)
