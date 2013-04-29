@@ -9,6 +9,7 @@ getver := ./getversion.pl
 package :=  $(foreach var,$(pkg),$(shell $(getver) $(var)))
 version :=  $(foreach var,$(pkg),$(shell $(getver) $(var) version))
 cranpkg := $(foreach var,$(pkg), CRAN/$(var))
+infile := valgrind.R
 ifeq ($(wildcard ~/tmp),) 
     tempdir = /tmp
 else 
@@ -17,7 +18,7 @@ endif
 
 
 winpkg :=  $(foreach var,$(pkg),$(var).zip)
-chkpkg :=  $(foreach var,$(pkg),$(var).Rcheck)
+chkpkg :=  $(foreach var,$(pkgs),$(var).Rcheck)
 ##$(shell perl getversion.pl $(pkg))
 ##version := $(shell perl getversion.pl $(pkg) version)
 libpath := $(shell echo "cat(.libPaths()[1],\"\n\",sep=\"\")" | R --no-save --slave | tail -n 1)
@@ -55,9 +56,8 @@ exportcheck: export
 srcbuild: 
 	$(RCMD) build --library=$(libpath) $(pkg)
 
-wincheck: 
-	$(RCMD) build $(pkg)
-	ftp -a -u ftp://win-builder.r-project.org/R-release/ $(package)
+wincheck: export
+	ftp -a -u ftp://win-builder.r-project.org/R-release/ CRAN/$(package)
 
 build: 
 	$(RCMD) INSTALL --build --library=$(libpath) $(pkg)
@@ -72,16 +72,22 @@ roxy:
 
 
 debug: cc
-	$(RCMD) INSTALL --no-multiarch --dsym $(pkg)
+	$(RCMD) INSTALL --no-multiarch --dsym --dsymutil $(pkg)
 
-q:
+valgrind:
+	R --library=$(libpath) -d "valgrind -v --tool=memcheck --leak-check=full" --vanilla < $(infile) > valgrind.out 2>&1
+
+valgrind2:
+	R -d "valgrind -v --tool=memcheck --leak-check=full --show-reachable=yes" --vanilla < valgrind.R > valgrind.out 2>&1
+
+quick:
 	$(RCMD) INSTALL --no-multiarch --no-data --no-demo --no-help  --configure-args="CXXFLAGS=-O0" $(pkg)
 
-install: in
-in: 
+in: install
+install: 
 	$(RCMD) INSTALL --no-multiarch $(pkg)
 
-rin: roxy in 
+rin: roxygen install
 
 R:
 	$(RCMD) SHLIB m.cpp
@@ -94,6 +100,9 @@ check:
 
 fcheck: 
 	$(RCMD) check $(pkg) --timings --as-cran --no-multiarch --library=$(libpath)
+
+fullcheck: 
+	$(RCMD) check $(pkg) --use-valgrind --timings --as-cran --no-multiarch --library=$(libpath)
 
 cranprep: export
 	@cd CRAN; R CMD build $(pkg)
@@ -108,8 +117,8 @@ cranprep: export
 	@echo "   Thanks for putting my package on CRAN."
 	@echo "   Sincerely,"
 
-srcclean: cc
-cc: 
+cc: srcclean
+srcclean: 
 	@rm -Rf $(pkg)/src-i386
 	@rm -Rf $(pkg)/src-x86_64
 	@rm -f $(pkg)/src/*.o
@@ -119,4 +128,4 @@ clean:
 	@rm -Rf $(chkpkg)
 	@rm -f *~ *.vrb *.ilg *idx *.lof *.brf *.ind  weaver_debug* _region_* *.pdfsync *.aux *.bbl *.out *.nav *.snm *.toc *aux *.bak *.blg *dvi *.log *tmp
 
-.PHONY: build check R index clean debug
+.PHONY: build check R index clean debug valgrind valgrind2 
