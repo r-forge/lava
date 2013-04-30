@@ -5,10 +5,11 @@ R := R
 RCMD := $(R) CMD
 RSCRIPT := Rscript
 GITCMD := git
+BUILDDIR := CRAN
 getver := ./getversion.pl
 package :=  $(foreach var,$(pkg),$(shell $(getver) $(var)))
 version :=  $(foreach var,$(pkg),$(shell $(getver) $(var) version))
-cranpkg := $(foreach var,$(pkg), CRAN/$(var))
+cranpkg := $(foreach var,$(pkg), $(BUILDDIR)/$(var))
 infile := valgrind.R
 ifeq ($(wildcard ~/tmp),) 
     tempdir = /tmp
@@ -46,18 +47,19 @@ all: build install buildwin
 	@ln -f -s $(curpath)/current/* ~/public_html/sem/
 
 export:
+	mkdir -p $(BUILDDIR)
 	@rm -Rf $(cranpkg)
-	$(GITCMD) archive HEAD $(pkg)/ | (cd CRAN; tar x)
-	cd CRAN; $(RCMD) build $(pkg)
+	$(GITCMD) archive HEAD $(pkg)/ | (cd $(BUILDDIR); tar x)
+	cd $(BUILDDIR); $(RCMD) build $(pkg)
 
 exportcheck: export 
-	cd CRAN; $(MAKE) fcheck $(pkg)
+	cd $(BUILDDIR); $(MAKE) fcheck $(pkg)
 
 srcbuild: 
 	$(RCMD) build --library=$(libpath) $(pkg)
 
 wincheck: export
-	ftp -a -u ftp://win-builder.r-project.org/R-release/ CRAN/$(package)
+	ftp -a -u ftp://win-builder.r-project.org/R-release/ $(BUILDDIR)/$(package)
 
 build: 
 	$(RCMD) INSTALL --build --library=$(libpath) $(pkg)
@@ -105,8 +107,8 @@ fullcheck:
 	$(RCMD) check $(pkg) --use-valgrind --timings --as-cran --no-multiarch --configure-args="CXXFLAGS=-O0 -g" --library=$(libpath)
 
 cranprep: export
-	@cd CRAN; R CMD build $(pkg)
-	@cd CRAN; R CMD check $(package) --as-cran --library=$(libpath)
+	@cd $(BUILDDIR); R CMD build $(pkg)
+	@cd $(BUILDDIR); R CMD check $(package) --as-cran --library=$(libpath)
 	@echo "Upload to:      anonymous@cran.r-project.org"
 	@echo "Prepare email:"
 	@echo "   To: CRAN@R-project.org"
