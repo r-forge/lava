@@ -1,9 +1,11 @@
 *.o
 *.so
+*~
 # /dev/bptwin/
 /dev/bptwin/src-*
 
 # /pkg/
+/pkg/CRAN
 /pkg/*.Rcheck
 /pkg/*.tar.gz
 /pkg/*.zip
