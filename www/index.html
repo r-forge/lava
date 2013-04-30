@@ -3,7 +3,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
 <head>
 <title>The lava and mets packages</title>
-<!-- 2013-04-30 Tue 12:49 -->
+<!-- 2013-04-30 Tue 22:17 -->
 <meta http-equiv="Content-Type" content="text/html;charset=utf-8"/>
 <meta name="generator" content="Org-mode"/>
 <style type="text/css">
@@ -141,95 +141,39 @@ for the JavaScript code in this tag.
 <h2>Table of Contents</h2>
 <div id="text-table-of-contents">
 <ul>
-<li><a href="#sec-1">Latent Variable Models (<code>lava</code>)</a>
+<li><a href="#sec-1">Multivariate Event Times (<code>mets</code>)</a>
 <ul>
-<li><a href="#sec-1-1">Citation</a></li>
+<li><a href="#sec-1-1">Installation</a></li>
+<li><a href="#sec-1-2">Examples</a></li>
+<li><a href="#sec-1-3">Citation</a></li>
 </ul>
 </li>
-<li><a href="#sec-2">Multivariate Event Times (<code>mets</code>)</a>
+<li><a href="#sec-2">Latent Variable Models (<code>lava</code>)</a>
 <ul>
-<li><a href="#sec-2-1">Citation</a></li>
+<li><a href="#sec-2-1">Installation</a></li>
+<li><a href="#sec-2-2">Citation</a></li>
+<li><a href="#sec-2-3">Examples</a></li>
 </ul>
 </li>
 </ul>
 </div>
 </div>
 <div id="outline-container-sec-1" class="outline-2">
-<h2 id="sec-1">Latent Variable Models (<code>lava</code>)</h2>
+<h2 id="sec-1">Multivariate Event Times (<code>mets</code>)</h2>
 <div class="outline-text-2" id="text-1">
-<div class="org-src-container">
-
-<pre class="src src-R">install.packages(<span style="color: #2aa198;">"lava"</span>,dependencies=<span style="color: #b58900;">TRUE</span>)
-<span style="color: #2aa198;">library</span>(<span style="color: #2aa198;">"lava"</span>)
-demo(<span style="color: #2aa198;">"lava"</span>)
-</pre>
-</div>
-
-
 <p>
-For graphical capabilities the <code>Rgraphviz</code> package is needed
+Implementation of various statistical models for multivariate event
+history data. Including multivariate cumulative incidence models,
+and bivariate random effects probit models (Liability models)
 </p>
-<div class="org-src-container">
-
-<pre class="src src-R"><span style="color: #2aa198;">source</span>(<span style="color: #2aa198;">"http://bioconductor.org/biocLite.R"</span>);
-biocLite(<span style="color: #2aa198;">"BiocUpgrade"</span>) <span style="color: #586e75; font-style: italic;">## </span><span style="color: #586e75; font-style: italic;">Upgrade previous bioconductor installation</span>
-biocLite(<span style="color: #2aa198;">"Rgraphviz"</span>)
-</pre>
-</div>
-<p>
-or the <code>igraph</code> package
-</p>
-<div class="org-src-container">
-
-<pre class="src src-R">install.packages(<span style="color: #2aa198;">"igraph"</span>,dependencies=<span style="color: #b58900;">TRUE</span>)
-</pre>
-</div>
-
-<p>
-The development version may be installed directly from <a href="https://r-forge.r-project.org/projects/lava/">R-forge</a>
-(requires <a href="http://cran.r-project.org/bin/windows/Rtools/">Rtools</a> on windows
-and <a href="http://cran.r-project.org/bin/macosx/tools/">development tools</a> (+Xcode) for Mac OS X):
-</p>
-<div class="org-src-container">
-
-<pre class="src src-R">install.packages(<span style="color: #2aa198;">"lava"</span>, repos=<span style="color: #2aa198;">"http://R-Forge.R-project.org"</span>)
-</pre>
-</div>
 </div>
 
 <div id="outline-container-sec-1-1" class="outline-3">
-<h3 id="sec-1-1">Citation</h3>
+<h3 id="sec-1-1">Installation</h3>
 <div class="outline-text-3" id="text-1-1">
-<p>
-To cite that <code>lava</code> package please use the following reference
-</p>
-
-
-<pre class="example">
-Klaus K. Holst and Esben Budtz-Joergensen (2012). 
-Linear Latent Variable Models: The lava-package. 
-Computational Statistics. http://dx.doi.org/10.1007/s00180-012-0344-y
-
-BibTeX:
-@Article{lava,
-  title = {Linear Latent Variable Models: The lava-package},
-  author = {Klaus K. Holst and Esben Budtz-Joergensen},
-  year = {2012},
-  journal = {Computational Statistics},
-  note = {http://dx.doi.org/10.1007/s00180-012-0344-y},
-}
-</pre>
-</div>
-</div>
-</div>
-
-<div id="outline-container-sec-2" class="outline-2">
-<h2 id="sec-2">Multivariate Event Times (<code>mets</code>)</h2>
-<div class="outline-text-2" id="text-2">
 <div class="org-src-container">
 
-<pre class="src src-R">install.packages(<span style="color: #2aa198;">"mets"</span>,dependencies=<span style="color: #b58900;">TRUE</span>)
-<span style="color: #2aa198;">library</span>(<span style="color: #2aa198;">"mets"</span>)
+<pre class="src src-R">install.packages(<span style="color: #259185;">"mets"</span>,dependencies=<span style="color: #a57705;">TRUE</span>)
 </pre>
 </div>
 
@@ -240,14 +184,60 @@ and <a href="http://cran.r-project.org/bin/macosx/tools/">development tools</a> 
 </p>
 <div class="org-src-container">
 
-<pre class="src src-R">install.packages(<span style="color: #2aa198;">"lava"</span>, repos=<span style="color: #2aa198;">"http://R-Forge.R-project.org"</span>)
+<pre class="src src-R">install.packages(<span style="color: #259185;">"mets"</span>, repos=<span style="color: #259185;">"http://R-Forge.R-project.org"</span>)
 </pre>
 </div>
 </div>
+</div>
+<div id="outline-container-sec-1-2" class="outline-3">
+<h3 id="sec-1-2">Examples</h3>
+<div class="outline-text-3" id="text-1-2">
+<div class="org-src-container">
 
-<div id="outline-container-sec-2-1" class="outline-3">
-<h3 id="sec-2-1">Citation</h3>
-<div class="outline-text-3" id="text-2-1">
+<pre class="src src-R"><span style="color: #259185;">library</span>(mets)
+
+data(prt) <span style="color: #465a61; font-style: italic;">## </span><span style="color: #465a61; font-style: italic;">Prostate data example (sim)</span>
+
+<span style="color: #465a61; font-style: italic;">## </span><span style="color: #465a61; font-style: italic;">Bivariate competing risk, concordance estimates</span>
+p33 <span style="color: #259185;">&lt;-</span> bicomprisk(Hist(time,status)~strata(zyg)+id(id),
+                  data=prt,cause=c(2,2),return.data=1,robust=1)
+
+p33dz <span style="color: #259185;">&lt;-</span> p33$model$<span style="color: #259185;">"DZ"</span>$comp.risk
+p33mz <span style="color: #259185;">&lt;-</span> p33$model$<span style="color: #259185;">"MZ"</span>$comp.risk
+
+<span style="color: #465a61; font-style: italic;">## </span><span style="color: #465a61; font-style: italic;">Probability weights based on Aalen's additive model </span>
+prtw <span style="color: #259185;">&lt;-</span> ipw(Surv(time,status==0)~country, data=prt,
+            cluster=<span style="color: #259185;">"id"</span>,weightname=<span style="color: #259185;">"w"</span>)
+
+
+<span style="color: #465a61; font-style: italic;">## </span><span style="color: #465a61; font-style: italic;">Marginal model (wrongly ignoring censorings)</span>
+bpmz <span style="color: #259185;">&lt;-</span> biprobit(cancer~1 + cluster(id), 
+                 data=subset(prt,zyg==<span style="color: #259185;">"MZ"</span>), eqmarg=<span style="color: #a57705;">TRUE</span>)
+
+<span style="color: #465a61; font-style: italic;">## </span><span style="color: #465a61; font-style: italic;">Extended liability model</span>
+bpmzIPW <span style="color: #259185;">&lt;-</span> biprobit(cancer~1 + cluster(id), 
+                    data=subset(prtw,zyg==<span style="color: #259185;">"MZ"</span>), 
+                    weight=<span style="color: #259185;">"w"</span>)
+smz <span style="color: #259185;">&lt;-</span> summary(bpmzIPW)
+
+<span style="color: #465a61; font-style: italic;">## </span><span style="color: #465a61; font-style: italic;">Concordance</span>
+plot(p33mz,ylim=c(0,0.1))
+abline(h=smz$prob[<span style="color: #259185;">"Concordance"</span>,],lwd=c(2,1,1),col=<span style="color: #259185;">"darkblue"</span>)
+<span style="color: #465a61; font-style: italic;">## </span><span style="color: #465a61; font-style: italic;">Wrong estimates:</span>
+abline(h=summary(bpmz)$prob[<span style="color: #259185;">"Concordance"</span>,],lwd=c(2,1,1),col=<span style="color: #259185;">"lightgray"</span>)
+</pre>
+</div>
+
+
+<div class="figure">
+<p><img src="mets1.png"  alt="mets1.png"/></p>
+</div>
+</div>
+</div>
+
+<div id="outline-container-sec-1-3" class="outline-3">
+<h3 id="sec-1-3">Citation</h3>
+<div class="outline-text-3" id="text-1-3">
 <p>
 To cite that <code>mets</code> package please use the following reference
 </p>
@@ -295,9 +285,160 @@ BibTeX
 </div>
 </div>
 </div>
+<div id="outline-container-sec-2" class="outline-2">
+<h2 id="sec-2">Latent Variable Models (<code>lava</code>)</h2>
+<div class="outline-text-2" id="text-2">
+<p>
+Estimation and simulation of latent variable models
+</p>
+</div>
+
+<div id="outline-container-sec-2-1" class="outline-3">
+<h3 id="sec-2-1">Installation</h3>
+<div class="outline-text-3" id="text-2-1">
+<div class="org-src-container">
+
+<pre class="src src-R">install.packages(<span style="color: #259185;">"lava"</span>,dependencies=<span style="color: #a57705;">TRUE</span>)
+<span style="color: #259185;">library</span>(<span style="color: #259185;">"lava"</span>)
+demo(<span style="color: #259185;">"lava"</span>)
+</pre>
+</div>
+
+<p>
+For graphical capabilities the <code>Rgraphviz</code> package is needed
+</p>
+<div class="org-src-container">
+
+<pre class="src src-R"><span style="color: #259185;">source</span>(<span style="color: #259185;">"http://bioconductor.org/biocLite.R"</span>);
+biocLite(<span style="color: #259185;">"BiocUpgrade"</span>) <span style="color: #465a61; font-style: italic;">## </span><span style="color: #465a61; font-style: italic;">Upgrade previous bioconductor installation</span>
+biocLite(<span style="color: #259185;">"Rgraphviz"</span>)
+</pre>
+</div>
+<p>
+or the <code>igraph</code> package
+</p>
+<div class="org-src-container">
+
+<pre class="src src-R">install.packages(<span style="color: #259185;">"igraph"</span>,dependencies=<span style="color: #a57705;">TRUE</span>)
+</pre>
+</div>
+
+<p>
+The development version may be installed directly from <a href="https://r-forge.r-project.org/projects/lava/">R-forge</a>:
+</p>
+<div class="org-src-container">
+
+<pre class="src src-R">install.packages(<span style="color: #259185;">"lava"</span>, repos=<span style="color: #259185;">"http://R-Forge.R-project.org"</span>)
+</pre>
+</div>
+</div>
+</div>
+<div id="outline-container-sec-2-2" class="outline-3">
+<h3 id="sec-2-2">Citation</h3>
+<div class="outline-text-3" id="text-2-2">
+<p>
+To cite that <code>lava</code> package please use the following reference
+</p>
+
+
+<pre class="example">
+Klaus K. Holst and Esben Budtz-Joergensen (2012). 
+Linear Latent Variable Models: The lava-package. 
+Computational Statistics. http://dx.doi.org/10.1007/s00180-012-0344-y
+
+BibTeX:
+@Article{lava,
+  title = {Linear Latent Variable Models: The lava-package},
+  author = {Klaus K. Holst and Esben Budtz-Joergensen},
+  year = {2012},
+  journal = {Computational Statistics},
+  note = {http://dx.doi.org/10.1007/s00180-012-0344-y},
+}
+</pre>
+</div>
+</div>
+<div id="outline-container-sec-2-3" class="outline-3">
+<h3 id="sec-2-3">Examples</h3>
+<div class="outline-text-3" id="text-2-3">
+<div class="org-src-container">
+
+<pre class="src src-R"><span style="color: #465a61; font-style: italic;">## </span><span style="color: #465a61; font-style: italic;">Specify structurual equation models with two factors</span>
+m <span style="color: #259185;">&lt;-</span> lvm()
+regression(m) <span style="color: #259185;">&lt;-</span> c(y1,y2,y3) ~ eta1
+regression(m) <span style="color: #259185;">&lt;-</span> c(z1,z2,z3) ~ eta2
+latent(m) <span style="color: #259185;">&lt;-</span> ~eta1+eta2
+regression(m) <span style="color: #259185;">&lt;-</span> eta2~eta1+x
+regression(m) <span style="color: #259185;">&lt;-</span> eta1~x
+
+labels(m) <span style="color: #259185;">&lt;-</span> c(eta1=expression(eta[1]),eta2=expression(eta[2]))
+plot(m)
+</pre>
+</div>
+
+
+<div class="figure">
+<p><img src="lava1.png"  alt="lava1.png"/></p>
+</div>
+
+<div class="org-src-container">
+
+<pre class="src src-R"><span style="color: #465a61; font-style: italic;">## </span><span style="color: #465a61; font-style: italic;">Simulation</span>
+set.seed(1)
+d <span style="color: #259185;">&lt;-</span> sim(m,100)
+<span style="color: #465a61; font-style: italic;">## </span><span style="color: #465a61; font-style: italic;">Estimation</span>
+e <span style="color: #259185;">&lt;-</span> estimate(m,d)
+e
+</pre>
+</div>
+
+<pre class="example">
+                    Estimate Std. Error  Z-value   P-value
+Measurements:                                             
+   y2&lt;-eta1          0.95462    0.08115 11.76402    &lt;1e-12
+   y3&lt;-eta1          0.98476    0.08956 10.99505    &lt;1e-12
+    z2&lt;-eta2         0.97038    0.05390 18.00340    &lt;1e-12
+    z3&lt;-eta2         0.95608    0.05666 16.87367    &lt;1e-12
+Regressions:                                              
+   eta1&lt;-x           1.24587    0.11541 10.79492    &lt;1e-12
+    eta2&lt;-eta1       0.95607    0.18015  5.30712 1.114e-07
+    eta2&lt;-x          1.11495    0.25263  4.41333 1.018e-05
+Intercepts:                                               
+   y2               -0.13896    0.12459 -1.11532    0.2647
+   y3               -0.07661    0.13870 -0.55239    0.5807
+   eta1              0.15801    0.12780  1.23644    0.2163
+   z2               -0.00441    0.14858 -0.02969    0.9763
+   z3               -0.15900    0.15731 -1.01076    0.3121
+   eta2             -0.14143    0.18380 -0.76948    0.4416
+Residual Variances:                                       
+   y1                0.69684    0.14862  4.68885          
+   y2                0.89804    0.16632  5.39933          
+   y3                1.22456    0.21185  5.78037          
+   eta1              0.93620    0.19636  4.76773          
+   z1                1.41423    0.26262  5.38514          
+   z2                0.87568    0.19466  4.49852          
+   z3                1.18155    0.22643  5.21822          
+   eta2              1.24430    0.29003  4.29032
+</pre>
+
+<div class="org-src-container">
+
+<pre class="src src-R"><span style="color: #465a61; font-style: italic;">## </span><span style="color: #465a61; font-style: italic;">Assessing goodness-of-fit (linearity between eta2 and eta1)</span>
+<span style="color: #259185;">library</span>(gof)
+g <span style="color: #259185;">&lt;-</span> cumres(e,eta2~eta1)
+plot(g)
+</pre>
+</div>
+
+
+<div class="figure">
+<p><img src="gof1.png"  alt="gof1.png"/></p>
+</div>
+</div>
+</div>
+</div>
 </div>
 <div id="postamble" class="status">
-<p class="date">Created: 2013-04-30 Tue 12:49</p>
+<p class="date">Created: 2013-04-30 Tue 22:17</p>
 <p class="xhtml-validation"></p>
 </div>
 </body>
