@@ -3,7 +3,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
 <head>
 <title>The lava and mets packages</title>
-<!-- 2013-04-30 Tue 22:17 -->
+<!-- 2013-04-30 Tue 23:38 -->
 <meta http-equiv="Content-Type" content="text/html;charset=utf-8"/>
 <meta name="generator" content="Org-mode"/>
 <style type="text/css">
@@ -144,8 +144,8 @@ for the JavaScript code in this tag.
 <li><a href="#sec-1">Multivariate Event Times (<code>mets</code>)</a>
 <ul>
 <li><a href="#sec-1-1">Installation</a></li>
-<li><a href="#sec-1-2">Examples</a></li>
-<li><a href="#sec-1-3">Citation</a></li>
+<li><a href="#sec-1-2">Citation</a></li>
+<li><a href="#sec-1-3">Examples</a></li>
 </ul>
 </li>
 <li><a href="#sec-2">Latent Variable Models (<code>lava</code>)</a>
@@ -190,54 +190,8 @@ and <a href="http://cran.r-project.org/bin/macosx/tools/">development tools</a> 
 </div>
 </div>
 <div id="outline-container-sec-1-2" class="outline-3">
-<h3 id="sec-1-2">Examples</h3>
+<h3 id="sec-1-2">Citation</h3>
 <div class="outline-text-3" id="text-1-2">
-<div class="org-src-container">
-
-<pre class="src src-R"><span style="color: #259185;">library</span>(mets)
-
-data(prt) <span style="color: #465a61; font-style: italic;">## </span><span style="color: #465a61; font-style: italic;">Prostate data example (sim)</span>
-
-<span style="color: #465a61; font-style: italic;">## </span><span style="color: #465a61; font-style: italic;">Bivariate competing risk, concordance estimates</span>
-p33 <span style="color: #259185;">&lt;-</span> bicomprisk(Hist(time,status)~strata(zyg)+id(id),
-                  data=prt,cause=c(2,2),return.data=1,robust=1)
-
-p33dz <span style="color: #259185;">&lt;-</span> p33$model$<span style="color: #259185;">"DZ"</span>$comp.risk
-p33mz <span style="color: #259185;">&lt;-</span> p33$model$<span style="color: #259185;">"MZ"</span>$comp.risk
-
-<span style="color: #465a61; font-style: italic;">## </span><span style="color: #465a61; font-style: italic;">Probability weights based on Aalen's additive model </span>
-prtw <span style="color: #259185;">&lt;-</span> ipw(Surv(time,status==0)~country, data=prt,
-            cluster=<span style="color: #259185;">"id"</span>,weightname=<span style="color: #259185;">"w"</span>)
-
-
-<span style="color: #465a61; font-style: italic;">## </span><span style="color: #465a61; font-style: italic;">Marginal model (wrongly ignoring censorings)</span>
-bpmz <span style="color: #259185;">&lt;-</span> biprobit(cancer~1 + cluster(id), 
-                 data=subset(prt,zyg==<span style="color: #259185;">"MZ"</span>), eqmarg=<span style="color: #a57705;">TRUE</span>)
-
-<span style="color: #465a61; font-style: italic;">## </span><span style="color: #465a61; font-style: italic;">Extended liability model</span>
-bpmzIPW <span style="color: #259185;">&lt;-</span> biprobit(cancer~1 + cluster(id), 
-                    data=subset(prtw,zyg==<span style="color: #259185;">"MZ"</span>), 
-                    weight=<span style="color: #259185;">"w"</span>)
-smz <span style="color: #259185;">&lt;-</span> summary(bpmzIPW)
-
-<span style="color: #465a61; font-style: italic;">## </span><span style="color: #465a61; font-style: italic;">Concordance</span>
-plot(p33mz,ylim=c(0,0.1))
-abline(h=smz$prob[<span style="color: #259185;">"Concordance"</span>,],lwd=c(2,1,1),col=<span style="color: #259185;">"darkblue"</span>)
-<span style="color: #465a61; font-style: italic;">## </span><span style="color: #465a61; font-style: italic;">Wrong estimates:</span>
-abline(h=summary(bpmz)$prob[<span style="color: #259185;">"Concordance"</span>,],lwd=c(2,1,1),col=<span style="color: #259185;">"lightgray"</span>)
-</pre>
-</div>
-
-
-<div class="figure">
-<p><img src="mets1.png"  alt="mets1.png"/></p>
-</div>
-</div>
-</div>
-
-<div id="outline-container-sec-1-3" class="outline-3">
-<h3 id="sec-1-3">Citation</h3>
-<div class="outline-text-3" id="text-1-3">
 <p>
 To cite that <code>mets</code> package please use the following reference
 </p>
@@ -282,6 +236,51 @@ BibTeX
 </ul>
 </li>
 </ul>
+</div>
+</div>
+<div id="outline-container-sec-1-3" class="outline-3">
+<h3 id="sec-1-3">Examples</h3>
+<div class="outline-text-3" id="text-1-3">
+<div class="org-src-container">
+
+<pre class="src src-R"><span style="color: #259185;">library</span>(mets)
+
+data(prt) <span style="color: #465a61; font-style: italic;">## </span><span style="color: #465a61; font-style: italic;">Prostate data example (sim)</span>
+
+<span style="color: #465a61; font-style: italic;">## </span><span style="color: #465a61; font-style: italic;">Bivariate competing risk, concordance estimates</span>
+p33 <span style="color: #259185;">&lt;-</span> bicomprisk(Hist(time,status)~strata(zyg)+id(id),
+                  data=prt,cause=c(2,2),return.data=1,robust=1)
+
+p33dz <span style="color: #259185;">&lt;-</span> p33$model$<span style="color: #259185;">"DZ"</span>$comp.risk
+p33mz <span style="color: #259185;">&lt;-</span> p33$model$<span style="color: #259185;">"MZ"</span>$comp.risk
+
+<span style="color: #465a61; font-style: italic;">## </span><span style="color: #465a61; font-style: italic;">Probability weights based on Aalen's additive model </span>
+prtw <span style="color: #259185;">&lt;-</span> ipw(Surv(time,status==0)~country, data=prt,
+            cluster=<span style="color: #259185;">"id"</span>,weightname=<span style="color: #259185;">"w"</span>)
+
+
+<span style="color: #465a61; font-style: italic;">## </span><span style="color: #465a61; font-style: italic;">Marginal model (wrongly ignoring censorings)</span>
+bpmz <span style="color: #259185;">&lt;-</span> biprobit(cancer~1 + cluster(id), 
+                 data=subset(prt,zyg==<span style="color: #259185;">"MZ"</span>), eqmarg=<span style="color: #a57705;">TRUE</span>)
+
+<span style="color: #465a61; font-style: italic;">## </span><span style="color: #465a61; font-style: italic;">Extended liability model</span>
+bpmzIPW <span style="color: #259185;">&lt;-</span> biprobit(cancer~1 + cluster(id), 
+                    data=subset(prtw,zyg==<span style="color: #259185;">"MZ"</span>), 
+                    weight=<span style="color: #259185;">"w"</span>)
+smz <span style="color: #259185;">&lt;-</span> summary(bpmzIPW)
+
+<span style="color: #465a61; font-style: italic;">## </span><span style="color: #465a61; font-style: italic;">Concordance</span>
+plot(p33mz,ylim=c(0,0.1))
+abline(h=smz$prob[<span style="color: #259185;">"Concordance"</span>,],lwd=c(2,1,1),col=<span style="color: #259185;">"darkblue"</span>)
+<span style="color: #465a61; font-style: italic;">## </span><span style="color: #465a61; font-style: italic;">Wrong estimates:</span>
+abline(h=summary(bpmz)$prob[<span style="color: #259185;">"Concordance"</span>,],lwd=c(2,1,1),col=<span style="color: #259185;">"lightgray"</span>)
+</pre>
+</div>
+
+
+<div class="figure">
+<p><img src="mets1.png"  alt="mets1.png"/></p>
+</div>
 </div>
 </div>
 </div>
@@ -438,7 +437,7 @@ plot(g)
 </div>
 </div>
 <div id="postamble" class="status">
-<p class="date">Created: 2013-04-30 Tue 22:17</p>
+<p class="date">Created: 2013-04-30 Tue 23:38</p>
 <p class="xhtml-validation"></p>
 </div>
 </body>
