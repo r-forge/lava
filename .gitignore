@@ -17,6 +17,9 @@
 /pkg/nohup.out
 /pkg/tmp
 
+/pkg/*.r
+/pkg/*.R
+
 # /pkg/lava/
 /pkg/lava/POSSIBLESIDEFFECTS*
 
