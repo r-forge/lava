@@ -3,7 +3,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
 <head>
 <title>The lava and mets packages</title>
-<!-- 2013-04-30 Tue 23:38 -->
+<!-- 2013-05-01 Wed 16:37 -->
 <meta http-equiv="Content-Type" content="text/html;charset=utf-8"/>
 <meta name="generator" content="Org-mode"/>
 <style type="text/css">
@@ -173,7 +173,7 @@ and bivariate random effects probit models (Liability models)
 <div class="outline-text-3" id="text-1-1">
 <div class="org-src-container">
 
-<pre class="src src-R">install.packages(<span style="color: #259185;">"mets"</span>,dependencies=<span style="color: #a57705;">TRUE</span>)
+<pre class="src src-R">install.packages(<span style="color: #2aa198;">"mets"</span>,dependencies=<span style="color: #b58900;">TRUE</span>)
 </pre>
 </div>
 
@@ -184,7 +184,7 @@ and <a href="http://cran.r-project.org/bin/macosx/tools/">development tools</a> 
 </p>
 <div class="org-src-container">
 
-<pre class="src src-R">install.packages(<span style="color: #259185;">"mets"</span>, repos=<span style="color: #259185;">"http://R-Forge.R-project.org"</span>)
+<pre class="src src-R">install.packages(<span style="color: #2aa198;">"mets"</span>, repos=<span style="color: #2aa198;">"http://R-Forge.R-project.org"</span>)
 </pre>
 </div>
 </div>
@@ -243,37 +243,39 @@ BibTeX
 <div class="outline-text-3" id="text-1-3">
 <div class="org-src-container">
 
-<pre class="src src-R"><span style="color: #259185;">library</span>(mets)
+<pre class="src src-R"><span style="color: #2aa198;">library</span>(mets)
 
-data(prt) <span style="color: #465a61; font-style: italic;">## </span><span style="color: #465a61; font-style: italic;">Prostate data example (sim)</span>
+data(prt) <span style="color: #586e75; font-style: italic;">## </span><span style="color: #586e75; font-style: italic;">Prostate data example (sim)</span>
 
-<span style="color: #465a61; font-style: italic;">## </span><span style="color: #465a61; font-style: italic;">Bivariate competing risk, concordance estimates</span>
-p33 <span style="color: #259185;">&lt;-</span> bicomprisk(Hist(time,status)~strata(zyg)+id(id),
-                  data=prt,cause=c(2,2),return.data=1,robust=1)
+<span style="color: #586e75; font-style: italic;">## </span><span style="color: #586e75; font-style: italic;">Bivariate competing risk, concordance estimates</span>
+p33 <span style="color: #2aa198;">&lt;-</span> bicomprisk(Hist(time,status)~strata(zyg)+id(id),
+                  data=prt,cause=c(2,2),return.data=1,prodlim=<span style="color: #b58900;">TRUE</span>)
 
-p33dz <span style="color: #259185;">&lt;-</span> p33$model$<span style="color: #259185;">"DZ"</span>$comp.risk
-p33mz <span style="color: #259185;">&lt;-</span> p33$model$<span style="color: #259185;">"MZ"</span>$comp.risk
+p33dz <span style="color: #2aa198;">&lt;-</span> p33$model$<span style="color: #2aa198;">"DZ"</span>$comp.risk
+p33mz <span style="color: #2aa198;">&lt;-</span> p33$model$<span style="color: #2aa198;">"MZ"</span>$comp.risk
 
-<span style="color: #465a61; font-style: italic;">## </span><span style="color: #465a61; font-style: italic;">Probability weights based on Aalen's additive model </span>
-prtw <span style="color: #259185;">&lt;-</span> ipw(Surv(time,status==0)~country, data=prt,
-            cluster=<span style="color: #259185;">"id"</span>,weightname=<span style="color: #259185;">"w"</span>)
+<span style="color: #586e75; font-style: italic;">## </span><span style="color: #586e75; font-style: italic;">Probability weights based on Aalen's additive model </span>
+prtw <span style="color: #2aa198;">&lt;-</span> ipw(Surv(time,status==0)~country, data=prt,
+            cluster=<span style="color: #2aa198;">"id"</span>,weightname=<span style="color: #2aa198;">"w"</span>)
 
 
-<span style="color: #465a61; font-style: italic;">## </span><span style="color: #465a61; font-style: italic;">Marginal model (wrongly ignoring censorings)</span>
-bpmz <span style="color: #259185;">&lt;-</span> biprobit(cancer~1 + cluster(id), 
-                 data=subset(prt,zyg==<span style="color: #259185;">"MZ"</span>), eqmarg=<span style="color: #a57705;">TRUE</span>)
+<span style="color: #586e75; font-style: italic;">## </span><span style="color: #586e75; font-style: italic;">Marginal model (wrongly ignoring censorings)</span>
+bpmz <span style="color: #2aa198;">&lt;-</span> biprobit(cancer~1 + cluster(id), 
+                 data=subset(prt,zyg==<span style="color: #2aa198;">"MZ"</span>), eqmarg=<span style="color: #b58900;">TRUE</span>)
 
-<span style="color: #465a61; font-style: italic;">## </span><span style="color: #465a61; font-style: italic;">Extended liability model</span>
-bpmzIPW <span style="color: #259185;">&lt;-</span> biprobit(cancer~1 + cluster(id), 
-                    data=subset(prtw,zyg==<span style="color: #259185;">"MZ"</span>), 
-                    weight=<span style="color: #259185;">"w"</span>)
-smz <span style="color: #259185;">&lt;-</span> summary(bpmzIPW)
+<span style="color: #586e75; font-style: italic;">## </span><span style="color: #586e75; font-style: italic;">Extended liability model</span>
+bpmzIPW <span style="color: #2aa198;">&lt;-</span> biprobit(cancer~1 + cluster(id), 
+                    data=subset(prtw,zyg==<span style="color: #2aa198;">"MZ"</span>), 
+                    weight=<span style="color: #2aa198;">"w"</span>)
+smz <span style="color: #2aa198;">&lt;-</span> summary(bpmzIPW)
 
-<span style="color: #465a61; font-style: italic;">## </span><span style="color: #465a61; font-style: italic;">Concordance</span>
-plot(p33mz,ylim=c(0,0.1))
-abline(h=smz$prob[<span style="color: #259185;">"Concordance"</span>,],lwd=c(2,1,1),col=<span style="color: #259185;">"darkblue"</span>)
-<span style="color: #465a61; font-style: italic;">## </span><span style="color: #465a61; font-style: italic;">Wrong estimates:</span>
-abline(h=summary(bpmz)$prob[<span style="color: #259185;">"Concordance"</span>,],lwd=c(2,1,1),col=<span style="color: #259185;">"lightgray"</span>)
+<span style="color: #586e75; font-style: italic;">## </span><span style="color: #586e75; font-style: italic;">Concordance</span>
+plot(p33mz1,ylim=c(0,0.1),axes=<span style="color: #b58900;">FALSE</span>,automar=<span style="color: #b58900;">FALSE</span>,atrisk=<span style="color: #b58900;">FALSE</span>)
+axis(2); axis(1)
+
+abline(h=smz$prob[<span style="color: #2aa198;">"Concordance"</span>,],lwd=c(2,1,1),col=<span style="color: #2aa198;">"darkblue"</span>)
+<span style="color: #586e75; font-style: italic;">## </span><span style="color: #586e75; font-style: italic;">Wrong estimates:</span>
+abline(h=summary(bpmz)$prob[<span style="color: #2aa198;">"Concordance"</span>,],lwd=c(2,1,1),col=<span style="color: #2aa198;">"lightgray"</span>)
 </pre>
 </div>
 
@@ -297,9 +299,9 @@ Estimation and simulation of latent variable models
 <div class="outline-text-3" id="text-2-1">
 <div class="org-src-container">
 
-<pre class="src src-R">install.packages(<span style="color: #259185;">"lava"</span>,dependencies=<span style="color: #a57705;">TRUE</span>)
-<span style="color: #259185;">library</span>(<span style="color: #259185;">"lava"</span>)
-demo(<span style="color: #259185;">"lava"</span>)
+<pre class="src src-R">install.packages(<span style="color: #2aa198;">"lava"</span>,dependencies=<span style="color: #b58900;">TRUE</span>)
+<span style="color: #2aa198;">library</span>(<span style="color: #2aa198;">"lava"</span>)
+demo(<span style="color: #2aa198;">"lava"</span>)
 </pre>
 </div>
 
@@ -308,9 +310,9 @@ For graphical capabilities the <code>Rgraphviz</code> package is needed
 </p>
 <div class="org-src-container">
 
-<pre class="src src-R"><span style="color: #259185;">source</span>(<span style="color: #259185;">"http://bioconductor.org/biocLite.R"</span>);
-biocLite(<span style="color: #259185;">"BiocUpgrade"</span>) <span style="color: #465a61; font-style: italic;">## </span><span style="color: #465a61; font-style: italic;">Upgrade previous bioconductor installation</span>
-biocLite(<span style="color: #259185;">"Rgraphviz"</span>)
+<pre class="src src-R"><span style="color: #2aa198;">source</span>(<span style="color: #2aa198;">"http://bioconductor.org/biocLite.R"</span>);
+biocLite(<span style="color: #2aa198;">"BiocUpgrade"</span>) <span style="color: #586e75; font-style: italic;">## </span><span style="color: #586e75; font-style: italic;">Upgrade previous bioconductor installation</span>
+biocLite(<span style="color: #2aa198;">"Rgraphviz"</span>)
 </pre>
 </div>
 <p>
@@ -318,7 +320,7 @@ or the <code>igraph</code> package
 </p>
 <div class="org-src-container">
 
-<pre class="src src-R">install.packages(<span style="color: #259185;">"igraph"</span>,dependencies=<span style="color: #a57705;">TRUE</span>)
+<pre class="src src-R">install.packages(<span style="color: #2aa198;">"igraph"</span>,dependencies=<span style="color: #b58900;">TRUE</span>)
 </pre>
 </div>
 
@@ -327,7 +329,7 @@ The development version may be installed directly from <a href="https://r-forge.
 </p>
 <div class="org-src-container">
 
-<pre class="src src-R">install.packages(<span style="color: #259185;">"lava"</span>, repos=<span style="color: #259185;">"http://R-Forge.R-project.org"</span>)
+<pre class="src src-R">install.packages(<span style="color: #2aa198;">"lava"</span>, repos=<span style="color: #2aa198;">"http://R-Forge.R-project.org"</span>)
 </pre>
 </div>
 </div>
@@ -361,15 +363,15 @@ BibTeX:
 <div class="outline-text-3" id="text-2-3">
 <div class="org-src-container">
 
-<pre class="src src-R"><span style="color: #465a61; font-style: italic;">## </span><span style="color: #465a61; font-style: italic;">Specify structurual equation models with two factors</span>
-m <span style="color: #259185;">&lt;-</span> lvm()
-regression(m) <span style="color: #259185;">&lt;-</span> c(y1,y2,y3) ~ eta1
-regression(m) <span style="color: #259185;">&lt;-</span> c(z1,z2,z3) ~ eta2
-latent(m) <span style="color: #259185;">&lt;-</span> ~eta1+eta2
-regression(m) <span style="color: #259185;">&lt;-</span> eta2~eta1+x
-regression(m) <span style="color: #259185;">&lt;-</span> eta1~x
+<pre class="src src-R"><span style="color: #586e75; font-style: italic;">## </span><span style="color: #586e75; font-style: italic;">Specify structurual equation models with two factors</span>
+m <span style="color: #2aa198;">&lt;-</span> lvm()
+regression(m) <span style="color: #2aa198;">&lt;-</span> c(y1,y2,y3) ~ eta1
+regression(m) <span style="color: #2aa198;">&lt;-</span> c(z1,z2,z3) ~ eta2
+latent(m) <span style="color: #2aa198;">&lt;-</span> ~eta1+eta2
+regression(m) <span style="color: #2aa198;">&lt;-</span> eta2~eta1+x
+regression(m) <span style="color: #2aa198;">&lt;-</span> eta1~x
 
-labels(m) <span style="color: #259185;">&lt;-</span> c(eta1=expression(eta[1]),eta2=expression(eta[2]))
+labels(m) <span style="color: #2aa198;">&lt;-</span> c(eta1=expression(eta[1]),eta2=expression(eta[2]))
 plot(m)
 </pre>
 </div>
@@ -381,11 +383,11 @@ plot(m)
 
 <div class="org-src-container">
 
-<pre class="src src-R"><span style="color: #465a61; font-style: italic;">## </span><span style="color: #465a61; font-style: italic;">Simulation</span>
+<pre class="src src-R"><span style="color: #586e75; font-style: italic;">## </span><span style="color: #586e75; font-style: italic;">Simulation</span>
 set.seed(1)
-d <span style="color: #259185;">&lt;-</span> sim(m,100)
-<span style="color: #465a61; font-style: italic;">## </span><span style="color: #465a61; font-style: italic;">Estimation</span>
-e <span style="color: #259185;">&lt;-</span> estimate(m,d)
+d <span style="color: #2aa198;">&lt;-</span> sim(m,100)
+<span style="color: #586e75; font-style: italic;">## </span><span style="color: #586e75; font-style: italic;">Estimation</span>
+e <span style="color: #2aa198;">&lt;-</span> estimate(m,d)
 e
 </pre>
 </div>
@@ -421,9 +423,9 @@ Residual Variances:
 
 <div class="org-src-container">
 
-<pre class="src src-R"><span style="color: #465a61; font-style: italic;">## </span><span style="color: #465a61; font-style: italic;">Assessing goodness-of-fit (linearity between eta2 and eta1)</span>
-<span style="color: #259185;">library</span>(gof)
-g <span style="color: #259185;">&lt;-</span> cumres(e,eta2~eta1)
+<pre class="src src-R"><span style="color: #586e75; font-style: italic;">## </span><span style="color: #586e75; font-style: italic;">Assessing goodness-of-fit (linearity between eta2 and eta1)</span>
+<span style="color: #2aa198;">library</span>(gof)
+g <span style="color: #2aa198;">&lt;-</span> cumres(e,eta2~eta1)
 plot(g)
 </pre>
 </div>
@@ -437,7 +439,7 @@ plot(g)
 </div>
 </div>
 <div id="postamble" class="status">
-<p class="date">Created: 2013-04-30 Tue 23:38</p>
+<p class="date">Created: 2013-05-01 Wed 16:37</p>
 <p class="xhtml-validation"></p>
 </div>
 </body>
