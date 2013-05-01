@@ -1,8 +1,15 @@
 *.o
 *.so
 *~
-# /dev/bptwin/
+test
+
+# /www
+/www/org*css
+/www/auto
+
+# /dev
 /dev/bptwin/src-*
+/dev/AalenFrailty
 
 # /pkg/
 /pkg/CRAN
@@ -16,6 +23,8 @@
 /pkg/x.log
 /pkg/nohup.out
 /pkg/tmp
+/pkg/valgrind*
+/pkg/test
 
 /pkg/*.r
 /pkg/*.R
