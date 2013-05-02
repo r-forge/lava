@@ -2,6 +2,8 @@
 *.so
 *~
 test
+*.RData
+*.Rhistory
 
 # /www
 /www/org*css
@@ -16,10 +18,8 @@ test
 /pkg/*.Rcheck
 /pkg/*.tar.gz
 /pkg/*.zip
-/pkg/.RData
 /pkg/*.tgz
 /pkg/*.obsolete
-/pkg/.Rhistory
 /pkg/x.log
 /pkg/nohup.out
 /pkg/tmp
