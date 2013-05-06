@@ -9,6 +9,7 @@
 ##'@param ylab Label of x-axis
 ##'@param xlab Label of y-axis
 ##'@param main Title of plot
+##'@param k Optional group number for multiple group analysis
 ##'@param \dots Additional argument
 ##'@author Klaus K. Holst
 ##'@keywords models
@@ -43,13 +44,18 @@ plotres <- function(x,var=endogenous(x),
                     ylab="Cumulative Distribution Function",
                     xlab="Standardized residuals",
                     main,
+                    k,
                     ...) {
   require(survival)
   r <- residuals(x,std=TRUE)
   W <- Weight(x)
+  if (inherits(x,"multigroupfit")) {
+    if (missing(k)) stop("Specify which group to assess.")
+    r <- r[[k]]; W <- W[[k]]
+  }
   
-  for (v in var) {    
-    if (v %in% colnames(W)) {
+  for (v in var) {
+    if (v %in% (W)) {
       S <- Surv(ifelse(W[,v]==-1,NA,r[,v]),
                 ifelse(W[,v]==1,NA,r[,v]),
                 type="interval2")      
