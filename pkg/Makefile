@@ -59,7 +59,7 @@ srcbuild:
 	$(RCMD) build --library=$(libpath) $(pkg)
 
 wincheck: export
-	ftp -a -u ftp://win-builder.r-project.org/R-release/ $(BUILDDIR)/$(package)
+	cd $(BUILDDIR); ftp -a -u ftp://win-builder.r-project.org/R-release/ $(package)
 
 build: 
 	$(RCMD) INSTALL --build --library=$(libpath) $(pkg)
