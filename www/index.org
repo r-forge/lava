@@ -88,7 +88,7 @@ To cite that =mets= package please use the following reference
   smz <- summary(bpmzIPW)
   
   ## Concordance
-  plot(p33mz1,ylim=c(0,0.1),axes=FALSE,automar=FALSE,atrisk=FALSE)
+  plot(p33mz,ylim=c(0,0.1),axes=FALSE,automar=FALSE,atrisk=FALSE)
   axis(2); axis(1)
     
   abline(h=smz$prob["Concordance",],lwd=c(2,1,1),col="darkblue")
