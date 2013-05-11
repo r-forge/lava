@@ -107,7 +107,6 @@ fullcheck:
 	$(RCMD) check $(pkg) --use-valgrind --timings --as-cran --no-multiarch --configure-args="CXXFLAGS=-O0 -g" --library=$(libpath)
 
 cranprep: export
-	@cd $(BUILDDIR); R CMD build $(pkg)
 	@cd $(BUILDDIR); R CMD check $(package) --as-cran --library=$(libpath)
 	@echo "Upload to:      anonymous@cran.r-project.org"
 	@echo "Prepare email:"
