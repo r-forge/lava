@@ -50,7 +50,6 @@ test
 /pkg/lava.tobit/R/*bak
 
 # /pkg/mets/
-/pkg/mets/man/*.Rd
 /pkg/mets/r_env_cache
 /pkg/mets/Rplots.p*
 /pkg/mets/weaver_debug*
