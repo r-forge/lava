@@ -59,6 +59,9 @@ srcbuild:
 	$(RCMD) build --library=$(libpath) $(pkg)
 
 wincheck: export
+	cd $(BUILDDIR); ftp -a -u ftp://win-builder.r-project.org/R-devel/ $(package)
+
+wincheckrelease: export
 	cd $(BUILDDIR); ftp -a -u ftp://win-builder.r-project.org/R-release/ $(package)
 
 build: 
