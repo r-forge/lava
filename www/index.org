@@ -57,7 +57,7 @@ To cite that =mets= package please use the following reference
     2. [[http://arxiv.org/abs/1206.3421][Linear Latent Variable Models: The lava-package]]
 #+HTML:   </li>
 #+HTML: </ul>
-
+       
 ** Examples
 
 #+BEGIN_SRC R :exports both :file mets1.png :cache yes
