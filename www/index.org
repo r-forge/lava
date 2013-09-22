@@ -236,6 +236,6 @@ Residual Variances:
 #+STARTUP: hideall 
 #+OPTIONS: toc:t h:4 num:nil tags:nil
 #+HTML_HEAD: <link rel="stylesheet" type="text/css" href="http://www.biostat.ku.dk/~kkho/styles/orgmode2.css"/>
-#+HTML_HEAD: <link rel="icon" type="image/x-icon" href="logo.ico"/>
-#+HTML_HEAD: <style type="text/css">body { background-image: url(logo.png); }</style>
+#+HTML_HEAD: <link rel="icon" type="image/x-icon" href="http://www.biostat.ku.dk/~kkho/styles/logo.ico"/>
+#+HTML_HEAD: <style type="text/css">body { background-image: url(http://www.biostat.ku.dk/~kkho/styles/logo.png); }</style>
 
