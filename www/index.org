@@ -1,3 +1,22 @@
+#+BEGIN_HTML
+<div class="box1">
+   <a id="box-link" href="https://r-forge.r-project.org/projects/lava/"></a>
+</div>
+#+END_HTML
+#+HTML: <ul id="navigation">
+#+HTML:   <li class="sub"><a href="#">Links</a>
+   - [[https://r-forge.r-project.org/scm/?group_id%3D527][Source code]]
+   - [[http://cran.r-project.org/web/packages/lava/][CRAN: lava]]
+   - [[http://cran.r-project.org/web/packages/mets/][CRAN: mets]]
+   - [[https://r-forge.r-project.org/R/?group_id%3D527][R-forge builds]]
+#+HTML:   </li>
+#+HTML:   <li class="sub"><a href="#">Publications</a>
+  - 
+    1. [[https://ifsv.sund.ku.dk/biostat/biostat_annualreport/images/a/ab/Research_Report_12-10.pdf][Estimating heritability for cause specific mortality based on twin studies]]
+    2. [[http://arxiv.org/abs/1206.3421][Linear Latent Variable Models: The lava-package]]
+    3. [[https://ifsv.sund.ku.dk/biostat/biostat_annualreport/images/b/bf/Research_Report_13-10.pdf][Estimating twin concordance for bivariate competing risks twin data]]
+#+HTML:   </li>
+#+HTML: </ul>
 
 
 * Multivariate Event Times (=mets=)
@@ -42,21 +61,6 @@ To cite that =mets= package please use the following reference
     language={English}
   }
 #+END_EXAMPLE
-
-
-#+BEGIN_HTML
-<div class="box1">
-   <a id="box-link" href="https://r-forge.r-project.org/projects/lava/"></a>
-</div>
-#+END_HTML
-#+HTML: <ul id="navigation">
-#+HTML:   <li><a href="https://r-forge.r-project.org/scm/?group_id=527">Source</a></li>
-#+HTML:   <li class="sub"><a href="#">Publications</a>
-  - 
-    1. [[https://ifsv.sund.ku.dk/biostat/biostat_annualreport/images/a/ab/Research_Report_12-10.pdf][Estimating heritability for cause specific mortality based on twin studies]]
-    2. [[http://arxiv.org/abs/1206.3421][Linear Latent Variable Models: The lava-package]]
-#+HTML:   </li>
-#+HTML: </ul>
        
 ** Examples
 
