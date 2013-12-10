@@ -90,7 +90,7 @@ quick:
 
 in: install
 install: 
-	$(RCMD) INSTALL --no-multiarch $(pkg)
+	$(RCMD) INSTALL --install-tests --no-multiarch $(pkg)
 
 rin: roxygen install
 
