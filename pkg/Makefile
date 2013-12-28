@@ -114,7 +114,7 @@ cranprep: export
 	@echo "Upload to:      anonymous@cran.r-project.org"
 	@echo "Prepare email:"
 	@echo "   To: CRAN@R-project.org"
-	@echo "   Subject: CRAN submission $(package)"
+	@echo "   Subject: CRAN submission $(pkg) $(version)"
 	@echo "   Dear CRAN administrators,"
 	@echo ""
 	@echo "   An updated version of the package '$(pkg)' has been uploaded to the incoming directory."
