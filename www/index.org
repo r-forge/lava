@@ -137,15 +137,19 @@ To cite that =lava= package please use the following reference
 
 
 #+BEGIN_EXAMPLE
-  Klaus K. Holst and Esben Budtz-Joergensen (2012). 
+  Klaus K. Holst and Esben Budtz-Joergensen (2013). 
   Linear Latent Variable Models: The lava-package. 
-  Computational Statistics. http://dx.doi.org/10.1007/s00180-012-0344-y
+  Computational Statistics 28 (4), pp 1385-1453. 
+  http://dx.doi.org/10.1007/s00180-012-0344-y
 
   BibTeX:
   @Article{lava,
     title = {Linear Latent Variable Models: The lava-package},
     author = {Klaus K. Holst and Esben Budtz-Joergensen},
-    year = {2012},
+    year = {2013},
+    volume = {28},
+    number = {4},
+    pages = {1385-1452},
     journal = {Computational Statistics},
     note = {http://dx.doi.org/10.1007/s00180-012-0344-y},
   }
