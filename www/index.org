@@ -38,7 +38,7 @@ install.packages("mets", repos="http://R-Forge.R-project.org")
 
 ** Citation
 
-To cite that =mets= package please use the following reference
+To cite the =mets= package please use the following reference
 
 #+BEGIN_EXAMPLE
   Thomas H. Scheike and Klaus K. Holst and Jacob B. Hjelmborg (2013). 
@@ -133,7 +133,7 @@ install.packages("lava", repos="http://R-Forge.R-project.org")
 
 ** Citation
 
-To cite that =lava= package please use the following reference
+To cite the =lava= package please use the following reference
 
 
 #+BEGIN_EXAMPLE
