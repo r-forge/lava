@@ -5,8 +5,8 @@
 \alias{binary<-.lvm}
 \title{Defines variables as binary}
 \usage{
-  \method{binary}{lvm}(x,var=NULL, ...)
-    \method{binary}{lvm}(x, ...) <- value
+\method{binary}{lvm}(x,var=NULL, ...)
+\method{binary}{lvm}(x, ...) <- value
 }
 \arguments{
   \item{x}{\code{lvm}-object}
@@ -19,26 +19,25 @@
   functions}
 }
 \value{
-  \code{lvm}-object (or vector of variable names if called
-  without any arguments)
+\code{lvm}-object (or vector of variable names if called
+without any arguments)
 }
 \description{
-  Defines variables of a latent variable model
-  (\code{lvm}-object from the \code{lava} package) as
-  binary.
+Defines variables of a latent variable model
+(\code{lvm}-object from the \code{lava} package) as binary.
 }
 \details{
-  This function sets the status of variables to 'binary'.
-  For use with the \code{estimate} method a probit-link
-  will be assumed. Used with the \code{sim} method normal
-  distributed data will be simulated followed by
-  thresholding at 0. To simulate data where the dichotomous
-  variable has a direct effect on the outcome the
-  \code{distribution} method can be used, e.g.
-  \code{distribution(m,~x) <- binomial.lvm("probit")}.
+This function sets the status of variables to 'binary'. For
+use with the \code{estimate} method a probit-link will be
+assumed. Used with the \code{sim} method normal distributed
+data will be simulated followed by thresholding at 0. To
+simulate data where the dichotomous variable has a direct
+effect on the outcome the \code{distribution} method can be
+used, e.g. \code{distribution(m,~x) <-
+binomial.lvm("probit")}.
 }
 \author{
-  Klaus K. Holst
+Klaus K. Holst
 }
 \keyword{models}
 \keyword{regression}

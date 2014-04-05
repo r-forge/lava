@@ -13,10 +13,10 @@
 \alias{tobitw_method.lvm}
 \title{For internal use}
 \description{
-  For internal use
+For internal use
 }
 \author{
-  Klaus K. Holst
+Klaus K. Holst
 }
 \keyword{utilities}
 

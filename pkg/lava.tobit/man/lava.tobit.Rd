@@ -4,14 +4,14 @@
 \alias{lava.tobit-package}
 \title{Estimation and simulation of probit and tobit latent variable models}
 \description{
-  Framwork for estimating parameters and simulate data from
-  Latent Variable Models with binary and censored
-  observations. Plugin for the \code{lava} package
+Framwork for estimating parameters and simulate data from
+Latent Variable Models with binary and censored
+observations. Plugin for the \code{lava} package
 }
 \details{
-  \tabular{ll}{ Package: \tab lava.tobit \cr Type: \tab
-  Package \cr Version: \tab 0.4-5 \cr Date: \tab 2012-03-15
-  \cr License: \tab GPL-3 \cr LazyLoad: \tab yes \cr }
+\tabular{ll}{ Package: \tab lava.tobit \cr Type: \tab
+Package \cr Version: \tab 0.4-5 \cr Date: \tab 2012-03-15
+\cr License: \tab GPL-3 \cr LazyLoad: \tab yes \cr }
 }
 \examples{
 m <- lvm(list(c(y,z) ~ x, y~z))
@@ -26,7 +26,7 @@ effects(e,y~x)
 }
 }
 \author{
-  Klaus K. Holst Maintainer: <kkho@biostat.ku.dk>
+Klaus K. Holst Maintainer: <kkho@biostat.ku.dk>
 }
 \keyword{package}
 

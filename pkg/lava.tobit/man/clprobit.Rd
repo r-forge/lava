@@ -2,8 +2,8 @@
 \alias{clprobit}
 \title{Composite Likelihood for probit latent variable models}
 \usage{
-  clprobit(x, data, k = 2, type = c("nearest", "all"),
-    pairlist, silent = TRUE, ...)
+clprobit(x, data, k = 2, type = c("nearest", "all"), pairlist,
+  silent = TRUE, ...)
 }
 \arguments{
   \item{x}{\code{lvm}-object}
@@ -29,18 +29,18 @@
   lower-level functions}
 }
 \value{
-  An object of class \code{clprobit} inheriting methods
-  from \code{lvm}
+An object of class \code{clprobit} inheriting methods from
+\code{lvm}
 }
 \description{
-  Estimate parameters in a probit latent variable model via
-  a composite likelihood decomposition.
+Estimate parameters in a probit latent variable model via a
+composite likelihood decomposition.
 }
 \author{
-  Klaus K. Holst
+Klaus K. Holst
 }
 \seealso{
-  \link[lava]{estimate}
+\link[lava]{estimate}
 }
 \keyword{models}
 \keyword{regression}

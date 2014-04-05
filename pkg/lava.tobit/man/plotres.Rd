@@ -2,9 +2,8 @@
 \alias{plotres}
 \title{Plot distribution of standardized residuals}
 \usage{
-  plotres(x, var = endogenous(x),
-    ylab = "Cumulative Distribution Function",
-    xlab = "Standardized residuals", main, ...)
+plotres(x, var = endogenous(x), ylab = "Cumulative Distribution Function",
+  xlab = "Standardized residuals", main, k, ...)
 }
 \arguments{
   \item{x}{Model, \code{lvmfit} object}
@@ -18,11 +17,14 @@
 
   \item{main}{Title of plot}
 
+  \item{k}{Optional group number for multiple group
+  analysis}
+
   \item{\dots}{Additional argument}
 }
 \description{
-  Plot empirical (KM) and model-specific cumulative
-  distribution function of standardized residuals
+Plot empirical (KM) and model-specific cumulative
+distribution function of standardized residuals
 }
 \examples{
 \dontrun{
@@ -50,7 +52,7 @@ par(mfrow=c(2,2)); plotres(e); plot(e)
 }
 }
 \author{
-  Klaus K. Holst
+Klaus K. Holst
 }
 \keyword{models}
 
