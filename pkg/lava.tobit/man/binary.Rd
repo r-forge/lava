@@ -1,8 +1,8 @@
 \name{binary}
 \alias{binary}
-\alias{binary.lvm}
 \alias{binary<-}
 \alias{binary<-.lvm}
+\alias{binary.lvm}
 \title{Defines variables as binary}
 \usage{
 \method{binary}{lvm}(x,var=NULL, ...)

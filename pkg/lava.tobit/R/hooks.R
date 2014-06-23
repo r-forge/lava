@@ -18,12 +18,12 @@ lava.tobit.color.hook <- function(x,subset=vars(x),...) {
 }
 
 ##' @export
-lava.tobit.estimate.hook <- function(x,data,weight,data2,estimator,...) {
+lava.tobit.estimate.hook <- function(x,data,weight,weight2,estimator,...) {
   dots <- list(...)
 ## Binary outcomes -> censored regression
   bin <- intersect(binary(x),vars(x))
   if (is.null(dim(data))) return(NULL)
-  if (estimator%in%c("gaussian","tobit")) {
+  if (estimator%in%c("gaussian","tobit","normal")) {
     for (i in setdiff(endogenous(x),binary(x))) {
       if (is.character(data[,i]) | is.factor(data[,i])) { # Transform binary 'factor'
         y <- as.factor(data[,i])
@@ -41,7 +41,7 @@ lava.tobit.estimate.hook <- function(x,data,weight,data2,estimator,...) {
       } else {
         ##        if (!all(binary(x)%in%colnames(data)))
         ##        W <- data[,binary(x),drop=FALSE]; W[W==0] <- -1; colnames(W) <- binary(x)
-        ##        attributes(W)$data2 <- weight
+        ##        attributes(W)$weight2 <- weight
         ##        weight <- W
         ##          weight[,binary(x)] <- W
       }
@@ -49,14 +49,14 @@ lava.tobit.estimate.hook <- function(x,data,weight,data2,estimator,...) {
         data[!is.na(data[,b]),b] <- 0
       }
       ##    data[,binary(x)] <- 0
-      if (!is.null(data2)) {
+      if (!is.null(weight2)) {
         estimator <- "tobitw"
       }
     }
   }
   
   ## Transform 'Surv' objects
-  data2 <- mynames <- NULL
+  weight2 <- mynames <- NULL
   if (estimator%in%c("normal")) {
     for (i in setdiff(endogenous(x),bin)) {
       if (is.Surv(data[,i])) { 
@@ -75,7 +75,7 @@ lava.tobit.estimate.hook <- function(x,data,weight,data2,estimator,...) {
         }
         if (!(attributes(S)$type%in%c("left","right","interval2"))) stop("Surv type not supported.")
         mynames <- c(mynames,i)
-        data2 <- cbind(data2,y2)
+        weight2 <- cbind(weight2,y2)
         data[,i] <- y1
       }
     }
@@ -114,5 +114,5 @@ lava.tobit.estimate.hook <- function(x,data,weight,data2,estimator,...) {
       }
     }
   }
-  return(c(list(x=x,data=data,weight=weight,data2=data2,estimator=estimator),dots)) 
+  return(c(list(x=x,data=data,weight=weight,weight2=weight2,estimator=estimator),dots)) 
 }

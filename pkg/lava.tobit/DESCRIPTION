@@ -16,3 +16,13 @@ Depends:
     survival
 License: GPL-3
 LazyLoad: yes
+Collate:
+    'binary.R'
+    'clprobit.R'
+    'hooks.R'
+    'onload.R'
+    'plotres.R'
+    'rbind.Surv.R'
+    'tobit.R'
+    'weighted.R'
+    'lava.tobit-package.R'
