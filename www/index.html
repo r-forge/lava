@@ -4,7 +4,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
 <head>
 <title>The lava and mets packages</title>
-<!-- 2013-10-31 Thu 14:04 -->
+<!-- 2014-07-30 Wed 11:39 -->
 <meta  http-equiv="Content-Type" content="text/html;charset=utf-8" />
 <meta  name="generator" content="Org-mode" />
 <style type="text/css">
@@ -54,6 +54,8 @@
   pre.src-sql:before   { content: 'SQL'; }
 
   table { border-collapse:collapse; }
+  caption.t-above { caption-side: top; }
+  caption.t-bottom { caption-side: bottom; }
   td, th { vertical-align:top;  }
   th.right  { text-align: center;  }
   th.left   { text-align: center;   }
@@ -93,7 +95,7 @@
 @licstart  The following is the entire license notice for the
 JavaScript code in this tag.
 
-Copyright (C) 2012  Free Software Foundation, Inc.
+Copyright (C) 2012-2013 Free Software Foundation, Inc.
 
 The JavaScript code in this tag is free software: you can
 redistribute it and/or modify it under the terms of the GNU
@@ -136,6 +138,28 @@ for the JavaScript code in this tag.
 </script>
 </head>
 <body>
+<div id="preamble" class="status">
+
+<script type="text/javascript">
+  function swapStyleSheet(sheet){
+      document.getElementById('pagestyle').setAttribute('href', sheet);
+  }
+  document.addEventListener('DOMContentLoaded',function() {
+      document.getElementById('content').onclick = function() {
+          var elem = document.getElementById('text-table-of-contents');
+          elem.style.display = elem.style.display == 'block' ? 'none' : 'block';
+      }
+  });
+  document.addEventListener('DOMContentLoaded',function() {
+      document.getElementById('content').onclick = function() {
+          var elem = document.getElementsByClassName('nav');
+          for (i = 0; i < elem.length; i++) { 
+               elem[i].style.display = elem[i].style.display == 'block' ? 'none' : 'block';
+          }
+      }
+  });
+</script>
+</div>
 <div id="content">
 <h1 class="title">The lava and mets packages</h1>
 <div id="table-of-contents">
@@ -159,9 +183,8 @@ for the JavaScript code in this tag.
 </ul>
 </div>
 </div>
-<div class="box1">
-   <a id="box-link" href="https://r-forge.r-project.org/projects/lava/"></a>
-</div>
+<a href="https://r-forge.r-project.org/projects/lava/" class="logo"><span></span></a>
+
 <ul id="navigation">
 <li class="sub"><a href="#">Links</a>
 <ul class="org-ul">
@@ -222,11 +245,12 @@ and <a href="http://cran.r-project.org/bin/macosx/tools/">development tools</a> 
 </div>
 </div>
 </div>
+
 <div id="outline-container-sec-1-2" class="outline-3">
 <h3 id="sec-1-2">Citation</h3>
 <div class="outline-text-3" id="text-1-2">
 <p>
-To cite that <code>mets</code> package please use the following reference
+To cite the <code>mets</code> package please use the following reference
 </p>
 
 <pre class="example">
@@ -252,6 +276,7 @@ BibTeX
 </pre>
 </div>
 </div>
+
 <div id="outline-container-sec-1-3" class="outline-3">
 <h3 id="sec-1-3">Examples</h3>
 <div class="outline-text-3" id="text-1-3">
@@ -301,6 +326,7 @@ abline(h=summary(bpmz)$prob[<span style="color: #2aa198;">"Concordance"</span>,]
 </div>
 </div>
 </div>
+
 <div id="outline-container-sec-2" class="outline-2">
 <h2 id="sec-2">Latent Variable Models (<code>lava</code>)</h2>
 <div class="outline-text-2" id="text-2">
@@ -349,30 +375,36 @@ The development version may be installed directly from <a href="https://r-forge.
 </div>
 </div>
 </div>
+
 <div id="outline-container-sec-2-2" class="outline-3">
 <h3 id="sec-2-2">Citation</h3>
 <div class="outline-text-3" id="text-2-2">
 <p>
-To cite that <code>lava</code> package please use the following reference
+To cite the <code>lava</code> package please use the following reference
 </p>
 
 
 <pre class="example">
-Klaus K. Holst and Esben Budtz-Joergensen (2012). 
+Klaus K. Holst and Esben Budtz-Joergensen (2013). 
 Linear Latent Variable Models: The lava-package. 
-Computational Statistics. http://dx.doi.org/10.1007/s00180-012-0344-y
+Computational Statistics 28 (4), pp 1385-1453. 
+http://dx.doi.org/10.1007/s00180-012-0344-y
 
 BibTeX:
 @Article{lava,
   title = {Linear Latent Variable Models: The lava-package},
   author = {Klaus K. Holst and Esben Budtz-Joergensen},
-  year = {2012},
+  year = {2013},
+  volume = {28},
+  number = {4},
+  pages = {1385-1452},
   journal = {Computational Statistics},
   note = {http://dx.doi.org/10.1007/s00180-012-0344-y},
 }
 </pre>
 </div>
 </div>
+
 <div id="outline-container-sec-2-3" class="outline-3">
 <h3 id="sec-2-3">Examples</h3>
 <div class="outline-text-3" id="text-2-3">
@@ -411,30 +443,30 @@ e
 <pre class="example">
                     Estimate Std. Error  Z-value   P-value
 Measurements:                                             
-   y2~eta1           0.95462    0.08115 11.76402    &lt;1e-12
-   y3~eta1           0.98476    0.08956 10.99505    &lt;1e-12
-    z2~eta2          0.97038    0.05390 18.00340    &lt;1e-12
-    z3~eta2          0.95608    0.05666 16.87367    &lt;1e-12
+   y2~eta1           0.95462    0.08083 11.80993    &lt;1e-12
+   y3~eta1           0.98476    0.08922 11.03722    &lt;1e-12
+    z2~eta2          0.97038    0.05368 18.07714    &lt;1e-12
+    z3~eta2          0.95608    0.05643 16.94182    &lt;1e-12
 Regressions:                                              
-   eta1~x            1.24587    0.11541 10.79492    &lt;1e-12
-    eta2~eta1        0.95607    0.18015  5.30712 1.114e-07
-    eta2~x           1.11495    0.25263  4.41333 1.018e-05
+   eta1~x            1.24587    0.11486 10.84694    &lt;1e-12
+    eta2~eta1        0.95608    0.18008  5.30910 1.102e-07
+    eta2~x           1.11495    0.25228  4.41951 9.893e-06
 Intercepts:                                               
-   y2               -0.13896    0.12459 -1.11532    0.2647
-   y3               -0.07661    0.13870 -0.55239    0.5807
+   y2               -0.13896    0.12458 -1.11537    0.2647
+   y3               -0.07661    0.13869 -0.55241    0.5807
    eta1              0.15801    0.12780  1.23644    0.2163
    z2               -0.00441    0.14858 -0.02969    0.9763
    z3               -0.15900    0.15731 -1.01076    0.3121
-   eta2             -0.14143    0.18380 -0.76948    0.4416
+   eta2             -0.14143    0.18380 -0.76949    0.4416
 Residual Variances:                                       
-   y1                0.69684    0.14862  4.68885          
-   y2                0.89804    0.16632  5.39933          
-   y3                1.22456    0.21185  5.78037          
-   eta1              0.93620    0.19636  4.76773          
-   z1                1.41423    0.26262  5.38514          
-   z2                0.87568    0.19466  4.49852          
-   z3                1.18155    0.22643  5.21822          
-   eta2              1.24430    0.29003  4.29032
+   y1                0.69684    0.14858  4.69004          
+   y2                0.89804    0.16630  5.40026          
+   y3                1.22456    0.21182  5.78109          
+   eta1              0.93620    0.19623  4.77084          
+   z1                1.41422    0.26259  5.38570          
+   z2                0.87569    0.19463  4.49934          
+   z3                1.18155    0.22640  5.21883          
+   eta2              1.24430    0.28992  4.29195
 </pre>
 
 <div class="org-src-container">
@@ -456,7 +488,7 @@ plot(g)
 </div>
 </div>
 <div id="postamble" class="status">
-<p class="date">Created: 2013-10-31 Thu 14:04</p>
+<p class="date">Created: 2014-07-30 Wed 11:39</p>
 <p class="validation"></p>
 </div>
 </body>
