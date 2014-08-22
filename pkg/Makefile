@@ -69,7 +69,7 @@ build:
 
 roxygen: roxy
 roxy: 
-	echo 'library(roxygen2); roxygenize("$(pkg)")' | $(R) --library=$(libpath) --no-save 
+	@echo 'library(roxygen2); roxygenize("$(pkg)")' | $(R) --silent --no-save 
 
 ##buildwin: 
 %.zip:
