@@ -27,9 +27,10 @@ clprobit <- function(x,data,k=2,type=c("nearest","all"),pairlist,silent=TRUE,
   binsurv <- rep(FALSE,length(y))
   for (i in 1:length(y)) {
     z <- data[,y[i]]
-    binsurv[i] <- is.Surv(z) | (is.factor(z) && length(levels(z))==2)
+    ## binsurv[i] <- is.Surv(z) | (is.factor(z) && length(levels(z))==2)
+    binsurv[i] <- is.Surv(z) | (is.factor(z))
   }
-  
+
   binsurv <- unique(c(y[binsurv],binary(x)))
   ##  binsurvpos <- which(colnames(data)%in%binsurv)
   if (!missing(pairlist)) {
@@ -87,6 +88,7 @@ clprobit <- function(x,data,k=2,type=c("nearest","all"),pairlist,silent=TRUE,
 ##    mydata <- rbind(mydata,data0)
   }
 
+  suppressMessages(browser())
   suppressWarnings(e0 <- estimate(x,data=mydata,missing=TRUE,silent=silent,
               ...))
 
