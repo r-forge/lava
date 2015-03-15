@@ -9,9 +9,10 @@
 #+HTML:   </li>
 #+HTML:   <li class="sub"><a href="#">Publications</a>
   - 
-    1. [[https://ifsv.sund.ku.dk/biostat/biostat_annualreport/images/a/ab/Research_Report_12-10.pdf][Estimating heritability for cause specific mortality based on twin studies]]
-    2. [[http://arxiv.org/abs/1206.3421][Linear Latent Variable Models: The lava-package]]
-    3. [[https://ifsv.sund.ku.dk/biostat/biostat_annualreport/images/b/bf/Research_Report_13-10.pdf][Estimating twin concordance for bivariate competing risks twin data]]
+    1) [[https://ifsv.sund.ku.dk/biostat/biostat_annualreport/images/a/ab/Research_Report_12-10.pdf][Estimating heritability for cause specific mortality based on twin studies]]
+    2) [[http://arxiv.org/abs/1407.1682][The Liability Threshold Model for Censored Twin Data]]
+    3) [[http://arxiv.org/abs/1206.3421][Linear Latent Variable Models: The lava-package]]
+    4) [[https://ifsv.sund.ku.dk/biostat/biostat_annualreport/images/b/bf/Research_Report_13-10.pdf][Estimating twin concordance for bivariate competing risks twin data]]
 #+HTML:   </li>
 #+HTML: </ul>
 
@@ -37,13 +38,32 @@ install.packages("mets", repos="http://R-Forge.R-project.org")
 
 To cite the =mets= package please use the following reference
 
-#+BEGIN_EXAMPLE
+#+BEGIN_QUOTE
+  Klaus K. Holst and Thomas H. Scheike Jacob B. Hjelmborg (2015). 
+  The Liability Threshold Model for Censored Twin Data.
+  Computational Statistics and Data Analysis. [[http://dx.doi.org/10.1016/j.csda.2015.01.014]]
+#+END_QUOTE
+
+#+BEGIN_QUOTE
   Thomas H. Scheike and Klaus K. Holst and Jacob B. Hjelmborg (2013). 
   Estimating heritability for cause specific mortality based on twin studies.
   Lifetime Data Analysis. http://dx.doi.org/10.1007/s10985-013-9244-x
+#+END_QUOTE
 
-  BibTeX
-  @Article{
+
+BibTeX:
+#+BEGIN_EXAMPLE
+  @Article{,
+    title={The Liability Threshold Model for Censored Twin Data},
+    author={Holst, Klaus K. and Scheike, Thomas H. and Hjelmborg, Jacob B.},
+    year={2015},
+    doi={10.1016/j.csda.2015.01.014},
+    url={http://dx.doi.org/10.1016/j.csda.2015.01.014},
+    journal={Computational Statistics and Data Analysis}
+  }
+
+
+  @Article{,
     title={Estimating heritability for cause specific mortality based on twin studies},
     author={Scheike, Thomas H. and Holst, Klaus K. and Hjelmborg, Jacob B.},
     year={2013},
